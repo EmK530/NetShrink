@@ -101,21 +101,42 @@ Example: `NetShrink.Double(34578547893347589)`
 
 ### Vector2
 Stores a Vector2 with an option to use single-precision to reduce size by half.<br>
-Sizes: `Single-precision: 8 bytes`, `Double-precision: 16 bytes.`
+Sizes: `Single-precision: 8 bytes`, `Double-precision: 16 bytes.`<br>
 Arguments: `input: Vector2`, `float: boolean`, setting `float` to true will encode the Vector2 as single-precision, sacrificing precision for size.<br>
 Example: `NetShrink.Vector2(Vector2.new(384956,29538),true)`, this encodes as single-precision.
 <hr>
 
 ### Vector3
 Stores a Vector3 with an option to use single-precision to reduce size by half.<br>
-Sizes: `Single-precision: 12 bytes`, `Double-precision: 24 bytes.`
+Sizes: `Single-precision: 12 bytes`, `Double-precision: 24 bytes.`<br>
 Arguments: `input: Vector3`, `float: boolean`, setting `float` to true will encode the Vector3 as single-precision, sacrificing precision for size.<br>
 Example: `NetShrink.Vector3(Vector3.new(384956,29538,347835),true)`, this encodes as single-precision.
 <hr>
 
 ### CFrame
 Stores a CFrame with an option to use single-precision to reduce size by half.<br>
-Sizes: `Single-precision: 48 bytes`, `Double-precision: 96 bytes.`
+Sizes: `Single-precision: 48 bytes`, `Double-precision: 96 bytes.`<br>
 Arguments: `input: CFrame`, `float: boolean`, setting `float` to true will encode the CFrame as single-precision, sacrificing precision for size.<br>
 Example: `NetShrink.CFrame(workspace.SpawnLocation.CFrame,true)`, this encodes as single-precision.
+<hr>
+
+### CFrameEuler
+Stores a CFrame with an option to use single-precision to reduce size by half.<br>
+This variant only stores XYZ coordinates and XYZ EulerAngles from the `ToEulerAnglesXYZ` function to save space.<br>
+Sizes: `Single-precision: 24 bytes`, `Double-precision: 48 bytes.`<br>
+Arguments: `input: CFrame`, `float: boolean`, setting `float` to true will encode the CFrame as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.CFrameEuler(workspace.SpawnLocation.CFrame,true)`, this encodes as single-precision.
+<hr>
+
+### Color3
+Stores a Color3 with an option to use single-precision to reduce size by half.<br>
+Sizes: `Single-precision: 12 bytes`, `Double-precision: 24 bytes.`<br>
+Arguments: `input: Color3`, `float: boolean`, setting `float` to true will encode the Color3 as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.Color3(Color3.fromRGB(255,127,64),true)`, this encodes as single-precision.
+<hr>
+
+### Color3b
+Stores a Color3 as a 3-byte RGB value from 0-255. Any number outside this range will be clamped.<br>
+Arguments: `input: Color3`<br>
+Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))`
 <hr>
