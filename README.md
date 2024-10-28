@@ -61,8 +61,40 @@ Arguments: `input: string`, `compressMode: number`, `compressLevel: number`<br>
 `compressMode`: Controls what compression method to use, (0: `None`, 1: `DEFLATE`, 2: `Zlib`)<br>
 `compressLevel`: Controls the compression level, higher takes longer to process, range: 0-9<br>
 Example: `NetShrink.String("aaaaaaaaaaaaa",1,9)`
+<hr>
 
 ### Boolean5
-Stores up to 5 booleans into one single byte.<br>
+Stores up to 5 booleans into one byte.<br>
 Arguments: `...`, only booleans can be sent, exceeding 5 arguments or sending none causes an error.<br>
 Example: `NetShrink.Boolean5(true,true,false,false,true)`
+<hr>
+
+### UInt8
+Stores a number from 0-255 into one byte.<br>
+Arguments: `num: number`, any number out of range will cause an error<br>
+Example: `NetShrink.UInt8(127)`
+<hr>
+
+### UInt16
+Stores a number from 0-65535 into one byte.<br>
+Arguments: `num: number`, any number out of range will cause an error<br>
+Example: `NetShrink.UInt16(32767)`
+<hr>
+
+### UInt32
+Stores a number from 0-4294967295 into one byte.<br>
+Arguments: `num: number`, any number out of range will cause an error<br>
+Example: `NetShrink.UInt32(2147483647)`
+<hr>
+
+### Single
+Stores a number as a single-precision floating point. This risks losing some precision over normal number variables.<br>
+Arguments: `num: number`<br>
+Example: `NetShrink.Single(34578547893347589)` (this loses precision and becomes 34578547624378370)
+<hr>
+
+### Double
+Stores a number as a double-precision floating point. The standard number variable data type.<br>
+Arguments: `num: number`<br>
+Example: `NetShrink.Double(34578547893347589)`
+<hr>
