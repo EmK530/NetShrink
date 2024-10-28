@@ -88,13 +88,34 @@ Example: `NetShrink.UInt32(2147483647)`
 <hr>
 
 ### Single
-Stores a number as a single-precision floating point. This risks losing some precision over normal number variables.<br>
+Stores a number as a 4-byte single-precision floating point. This risks losing some precision over normal number variables.<br>
 Arguments: `num: number`<br>
 Example: `NetShrink.Single(34578547893347589)` (this loses precision and becomes 34578547624378370)
 <hr>
 
 ### Double
-Stores a number as a double-precision floating point. The standard number variable data type.<br>
+Stores a number as a 8-byte double-precision floating point. The standard number variable data type.<br>
 Arguments: `num: number`<br>
 Example: `NetShrink.Double(34578547893347589)`
+<hr>
+
+### Vector2
+Stores a Vector2 with an option to use single-precision to reduce size by half.<br>
+Sizes: `Single-precision: 8 bytes`, `Double-precision: 16 bytes.`
+Arguments: `input: Vector2`, `float: boolean`, setting `float` to true will encode the Vector2 as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.Vector2(Vector2.new(384956,29538),true)`, this encodes as single-precision.
+<hr>
+
+### Vector3
+Stores a Vector3 with an option to use single-precision to reduce size by half.<br>
+Sizes: `Single-precision: 12 bytes`, `Double-precision: 24 bytes.`
+Arguments: `input: Vector3`, `float: boolean`, setting `float` to true will encode the Vector3 as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.Vector3(Vector3.new(384956,29538,347835),true)`, this encodes as single-precision.
+<hr>
+
+### CFrame
+Stores a CFrame with an option to use single-precision to reduce size by half.<br>
+Sizes: `Single-precision: 48 bytes`, `Double-precision: 96 bytes.`
+Arguments: `input: CFrame`, `float: boolean`, setting `float` to true will encode the CFrame as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.CFrame(workspace.SpawnLocation.CFrame,true)`, this encodes as single-precision.
 <hr>
