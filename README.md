@@ -66,6 +66,7 @@ Example: `NetShrink.String("aaaaaaaaaaaaa",1,9)`
 ### Boolean5
 Stores up to 5 booleans into one byte.<br>
 Arguments: `...`, only booleans can be sent, exceeding 5 arguments or sending none causes an error.<br>
+Decodes to a table of booleans.<br>
 Example: `NetShrink.Boolean5(true,true,false,false,true)`
 <hr>
 
