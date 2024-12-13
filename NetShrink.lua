@@ -82,7 +82,7 @@ module.Decode = function(input: buffer, asTable, key)
 		input = module.Shift(input, key)
 	end
 	local st = burs(input,0,4)
-	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NThd' header but got '"..st.."'")
+	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NShd' header but got '"..st.."'")
 	local offset = 5
 	local dataTypesSize = buru8(input, 4)
 	local dataTypes = {}
