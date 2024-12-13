@@ -11,7 +11,7 @@ NetShrink is the main script you will be requiring. If you are setting up manual
 
 ## Encoding data for transmission
 To encode data into a buffer, you call the `NetShrink.Encode` function which takes a variable number of arguments.<br>
-These arguments will be the variables you compress into the buffer for transmission,<br>
+These arguments will be the variables you compress into the buffer for transmission (with one exception, see below the code),<br>
 but these have to be passed through a custom NetShrink function to convert them into proper data for encoding.<br>
 Many of them exist and they are all documented below, but here is a code example:
 ```
@@ -23,12 +23,17 @@ local encoded = NetShrink.Encode(
 -- To get encoded size, do buffer.len(encoded)
 game.ReplicatedStorage.UnreliableRemoteEvent:FireServer(encoded)
 ```
+When a function like `NetShrink.UInt8` is used, it always returns a table.<br>
+If you add a `number` as the last argument in Encode, it will treat that as an encryption key and you will receive an encrypted buffer.<br>
+To decode the encrypted buffer, you must provide the same key to Decode that was used during encoding.
 
 ## Decoding data
 To decode data from a buffer, call the `NetShrink.Decode` function.<br>
-This function takes a `buffer` as an input but also a `boolean`.<br>
+This function takes a `buffer` as an input but also optionally a `boolean` and a `number`.<br>
 The buffer is of course what's being decoded but if you send `true` as the second argument,<br>
-the function returns the decoded variables in a table instead of multiple return values.
+the function returns the decoded variables in a table instead of multiple return values.<br>
+If a third argument is given (must be `number`), then it will decrypt the input buffer before decoding.<br>
+This argument must be used if you are decoding an encrypted buffer and the key must match what was used during encoding.
 
 If we are trying to decode our example transmission, here's a simple example:
 ```
@@ -37,6 +42,7 @@ game.ReplicatedStorage.Unrel.OnServerEvent:Connect(function(plr,data)
   print(NetShrink.Decode(data)) -- prints: 127 65533 4294967295
 end)
 ```
+If `data` was encrypted, adding the key used during encoding as the third argument to Decode will make sure the buffer is read correctly.
 
 ## Documentation
 Below is a list of all supported data types and their respective functions and documentation.
