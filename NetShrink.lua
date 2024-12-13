@@ -1,5 +1,8 @@
 local module = {}
 
+local isStudio = game:GetService("RunService"):IsStudio()
+local debugMode = false and isStudio -- change this if you want, enables compression fail reports for strings
+
 local function CheckForModules(names)
 	for _,name in pairs(names) do
 		local Check = script:FindFirstChild(name)
@@ -27,10 +30,13 @@ local mace = math.ceil
 local b3ba = bit32.band
 local b3ls = bit32.lshift
 local b3rs = bit32.rshift
+local b3bx = bit32.bxor
 local buco = buffer.copy
 local bucr = buffer.create
 local buru8 = buffer.readu8
 local buwu8 = buffer.writeu8
+local burs = buffer.readstring
+local buws = buffer.writestring
 local bule = buffer.len
 
 local compressModeTargets = {
@@ -59,10 +65,26 @@ local debuggingFunctions = {
 -- Should not exceed 8
 local DataTypeBits = 4
 
+-- Encrypts/decrypts your buffer through XOR shifting using random numbers with the key as a seed
+module.Shift = function(input: buffer, key: number)
+	local len = bule(input)
+	local rand = Random.new(key+len)
+	for i = 1, len do
+		buwu8(input,i-1,b3bx(buru8(input,i-1),rand:NextInteger(0,255)))
+	end
+	return input
+end
+
 -- Decodes data types from a buffer and returns them as multiple arguments
-module.Decode = function(input,asTable)
-	local offset = 1
-	local dataTypesSize = buru8(input, 0)
+module.Decode = function(input: buffer, asTable, key)
+	if key ~= nil and typeof(key) == "number" then
+		-- Decrypt buffer with key
+		input = module.Shift(input, key)
+	end
+	local st = burs(input,0,4)
+	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NThd' header but got '"..st.."'")
+	local offset = 5
+	local dataTypesSize = buru8(input, 4)
 	local dataTypes = {}
 	local bitBuffer = 0
 	local bitsUsed = 0
@@ -99,17 +121,30 @@ module.Encode = function(...)
 	local dataTypes = {}
 	local encodedData = {}
 	local max = 2^DataTypeBits-1
-	for i,v in p({...}) do
-		if v.DataType > max then return error("Cannot encode DataType "..v.DataType) end
+	local inputs = {...}
+	local amt = #inputs
+	local key = nil
+	for i,v in p(inputs) do
+		local t = typeof(v)
+		if t ~= "table" then
+			if i == amt and t == "number" then
+				key = v
+				continue
+			else
+				error("[NetShrink] Invalid argument type for Encode, expected table but got "..t)
+			end
+		end
+		assert(v.DataType <= max, "[NetShrink] Cannot encode DataType "..v.DataType)
 		ti(dataTypes, v.DataType)
 		local enc = Encode.Convert(v)
 		ti(encodedData,enc)
 	end
 	
 	local dataTypesSize = #dataTypes
-	local dataTypesBuffer = bucr(1 + mace(dataTypesSize * DataTypeBits / 8))
-	local offset = 1
-	buwu8(dataTypesBuffer, 0, dataTypesSize)
+	local dataTypesBuffer = bucr(5 + mace(dataTypesSize * DataTypeBits / 8))
+	buws(dataTypesBuffer,0,"NShd")
+	local offset = 5
+	buwu8(dataTypesBuffer, 4, dataTypesSize)
 	local bitBuffer = 0
 	local bitsUsed = 0
 	for _, v in p(dataTypes) do
@@ -138,6 +173,9 @@ module.Encode = function(...)
 		local s = bule(v)
 		buco(finalBuffer, finalOffset, v, 0, s)
 		finalOffset+=s
+	end
+	if key ~= nil then
+		finalBuffer = module.Shift(finalBuffer, key)
 	end
 	return finalBuffer
 end
@@ -171,7 +209,9 @@ module.String = function(input: string, compressMode: number, compressLevel: num
 		if #new < #input then
 			input = new
 		else
-			print("Could not compress string! Gained "..(#new-#input).." bytes.")
+			if debugMode then
+				print("[NetShrink] Could not compress string! Gained "..(#new-#input).." bytes.")
+			end
 			compressed = false
 		end
 	end
