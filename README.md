@@ -32,7 +32,7 @@ To decode data from a buffer, call the `NetShrink.Decode` function.<br>
 This function takes a `buffer` as an input but also optionally a `boolean` and a `number`.<br>
 The buffer is of course what's being decoded but if you send `true` as the second argument,<br>
 the function returns the decoded variables in a table instead of multiple return values.<br>
-If a third argument is given (must be `number`), then it will decrypt the input buffer before decoding.<br>
+If a third argument is given (must be `number`) then it will decrypt the input buffer with the argument as the key, before decoding.<br>
 This argument must be used if you are decoding an encrypted buffer and the key must match what was used during encoding.
 
 If we are trying to decode our example transmission, here's a simple example:
