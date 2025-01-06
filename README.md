@@ -147,6 +147,7 @@ Example: `NetShrink.Color3(Color3.fromRGB(255,127,64),true)`, this encodes as si
 Stores a Color3 as a 3-byte RGB value from 0-255. Any number outside this range will be clamped.<br>
 Arguments: `input: Color3`<br>
 Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))`
+<hr>
 
 ### Table
 Accepts a variable number of data type arguments and instructs NetShrink to encode them into a table.<br>
