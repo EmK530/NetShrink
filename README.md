@@ -59,6 +59,7 @@ Below is a list of all supported data types and their respective functions and d
 - [CFrameEuler](https://github.com/EmK530/NetShrink#cframeeuler)
 - [Color3](https://github.com/EmK530/NetShrink#color3)
 - [Color3b](https://github.com/EmK530/NetShrink#color3b)
+- [Table](https://github.com/EmK530/NetShrink#table)
 <hr>
 
 ### String
@@ -146,4 +147,10 @@ Example: `NetShrink.Color3(Color3.fromRGB(255,127,64),true)`, this encodes as si
 Stores a Color3 as a 3-byte RGB value from 0-255. Any number outside this range will be clamped.<br>
 Arguments: `input: Color3`<br>
 Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))`
+
+### Table
+Accepts a variable number of data type arguments and instructs NetShrink to encode them into a table.<br>
+It is possible to put tables into tables, however dictionaries are not supported. Cost per table is 1 byte.<br>
+Arguments: `...`<br>
+Example: `NetShrink.Table(NetShrink.UInt8(127),NetShrink.UInt16(32767))`
 <hr>
