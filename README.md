@@ -47,6 +47,7 @@ If `data` was encrypted, adding the key used during encoding as the third argume
 ## Documentation
 Below is a list of all supported data types and their respective functions and documentation.
 - [String](https://github.com/EmK530/NetShrink#string)
+- [Boolean](https://github.com/EmK530/NetShrink#boolean)
 - [Boolean5](https://github.com/EmK530/NetShrink#boolean5)
 - [UInt8](https://github.com/EmK530/NetShrink#uint8)
 - [UInt16](https://github.com/EmK530/NetShrink#uint16)
@@ -68,6 +69,12 @@ Arguments: `input: string`, `compressMode: number`, `compressLevel: number`<br>
 `compressMode`: Controls what compression method to use, (0: `None`, 1: `DEFLATE`, 2: `Zlib`)<br>
 `compressLevel`: Controls the compression level, higher takes longer to process, range: 0-9<br>
 Example: `NetShrink.String("aaaaaaaaaaaaa",1,9)`
+<hr>
+
+### Boolean
+Stores one boolean into one byte. For more efficiency see [Boolean5](https://github.com/EmK530/NetShrink#boolean5).<br>
+Arguments: `bool: boolean`<br>
+Example: `NetShrink.Boolean(true)`
 <hr>
 
 ### Boolean5
