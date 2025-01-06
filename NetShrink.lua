@@ -109,9 +109,9 @@ module.Decode = function(input: buffer, asTable, key)
 	local layer = 1
 	for i = 1, #dataTypes do
 		local ty = dataTypes[i]
-		if ty < 13 then
+		if ty ~= 13 and ty ~= 14 then
 			local ret,r = Decode.ReadType(input,offset,ty)
-			if ret then ti(cur,ret) end
+			if ret~=nil then ti(cur,ret) end
 			offset = r
 		else
 			if ty == 14 then
@@ -250,6 +250,13 @@ module.String = function(input: string, compressMode: number, compressLevel: num
 		DataType = 0,
 		CompressMode = (if compressed then compressMode else 0),
 		Data = input
+	}
+end
+
+module.Boolean = function(bool: boolean)
+	return {
+		DataType = 15,
+		Value = bool
 	}
 end
 

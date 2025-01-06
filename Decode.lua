@@ -186,7 +186,13 @@ local functions = {
 		offset+=3
 		return C3r(R,G,B),offset
 	end,
-	nil
+	nil,
+	nil,
+	function(input: buffer, offset: number) -- Boolean
+		local b = buru8(input, offset)
+		offset+=1
+		return (b==1),offset
+	end,
 }
 
 module.ReadType = function(input: buffer, offset: number, type: number)

@@ -167,6 +167,12 @@ functions = {
 		end
 		return out
 	end,
+	nil,
+	function(v) -- Boolean
+		local buf = bucr(1)
+		buwu8(buf,0,(if v.Value then 1 else 0))
+		return buf
+	end,
 }
 
 module.Convert = function(v)
