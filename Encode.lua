@@ -91,7 +91,8 @@ local function OutlineMoment(v)
 	return buf
 end
 
-local functions = {
+local functions
+functions = {
 	function(v) -- String
 		local varlen = module.EncodeVarLength(#v.Data)
 		local buf = MergeBuffers(varlen,BufByte(v.CompressMode),ToBuffer(v))
@@ -148,6 +149,23 @@ local functions = {
 		buwu8(buf,1,v.G)
 		buwu8(buf,2,v.B)
 		return buf
+	end,
+	function(v)
+		local objs = {}
+		local total = 0
+		for _,a in p(v.Value) do
+			local buf = functions[a.DataType+1](a)
+			total += bule(buf)
+			ti(objs, buf)
+		end
+		local out = bucr(total)
+		total = 0
+		for _,v in p(objs) do
+			local len = bule(v)
+			buco(out,total,v,0,len)
+			total += len
+		end
+		return out
 	end,
 }
 
