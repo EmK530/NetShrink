@@ -186,6 +186,7 @@ local functions = {
 		offset+=3
 		return C3r(R,G,B),offset
 	end,
+	nil
 }
 
 module.ReadType = function(input: buffer, offset: number, type: number)
