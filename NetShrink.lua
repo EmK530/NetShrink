@@ -26,6 +26,7 @@ local Decode = require(script.Decode)
 local p = pairs
 local ts = tostring
 local ti = table.insert
+local tr = table.remove
 local mace = math.ceil
 local b3ba = bit32.band
 local b3ls = bit32.lshift
@@ -103,11 +104,29 @@ module.Decode = function(input: buffer, asTable, key)
 		bitsUsed-=DataTypeBits
 	end
 	local returns = {}
+	local cur = returns
+	local layers = {returns}
+	local layer = 1
 	for i = 1, #dataTypes do
 		local ty = dataTypes[i]
-		local ret,r = Decode.ReadType(input,offset,ty)
-		ti(returns,ret)
-		offset = r
+		if ty < 13 then
+			local ret,r = Decode.ReadType(input,offset,ty)
+			if ret then ti(cur,ret) end
+			offset = r
+		else
+			if ty == 14 then
+				layer -= 1
+				local n = layers[layer]
+				ti(n,cur)
+				tr(layers,layer+1)
+				cur = n
+			else
+				layer += 1
+				local new = {}
+				ti(layers, new)
+				cur = new
+			end
+		end
 	end
 	if asTable then
 		return returns
@@ -116,18 +135,15 @@ module.Decode = function(input: buffer, asTable, key)
 	end
 end
 
--- Encodes data types into a buffer and returns said buffer
-module.Encode = function(...)
-	local dataTypes = {}
-	local encodedData = {}
+local function RecursiveEncode(inp: {}, output, types, topmost)
 	local max = 2^DataTypeBits-1
-	local inputs = {...}
-	local amt = #inputs
+	local amt = #inp
 	local key = nil
-	for i,v in p(inputs) do
+	local totals = 0
+	for i,v in p(inp) do
 		local t = typeof(v)
 		if t ~= "table" then
-			if i == amt and t == "number" then
+			if topmost and i == amt and t == "number" then
 				key = v
 				continue
 			else
@@ -135,12 +151,26 @@ module.Encode = function(...)
 			end
 		end
 		assert(v.DataType <= max, "[NetShrink] Cannot encode DataType "..v.DataType)
-		ti(dataTypes, v.DataType)
-		local enc = Encode.Convert(v)
-		ti(encodedData,enc)
+		if v.DataType == 13 then
+			ti(types, 13)
+			local _,a = RecursiveEncode(v.Value,output,types)
+			ti(types, 14)
+			totals += a + 2
+		else
+			ti(types, v.DataType)
+			local enc = Encode.Convert(v)
+			ti(output,enc)
+			totals += 1
+		end
 	end
-	
-	local dataTypesSize = #dataTypes
+	return key,totals
+end
+
+-- Encodes data types into a buffer and returns said buffer
+module.Encode = function(...)
+	local dataTypes = {}
+	local encodedData = {}
+	local key,dataTypesSize = RecursiveEncode({...},encodedData,dataTypes,true)
 	local dataTypesBuffer = bucr(5 + mace(dataTypesSize * DataTypeBits / 8))
 	buws(dataTypesBuffer,0,"NShd")
 	local offset = 5
@@ -341,6 +371,17 @@ module.Color3b = function(input: Color3)
 		R = toByte(input.R),
 		G = toByte(input.G),
 		B = toByte(input.B)
+	}
+end
+
+module.Table = function(...)
+	local t = {}
+	for _,v in pairs({...}) do
+		table.insert(t,v)
+	end
+	return {
+		DataType = 13,
+		Value = t
 	}
 end
 
