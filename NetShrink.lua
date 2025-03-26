@@ -22,6 +22,9 @@ local Encode = require(script.Encode)
 local Decode = require(script.Decode)
 
 -- Optimization Constants
+-- Most of these do nothing if supported by FASTCALL,
+-- but it still optimizes cases where FASTCALL fails for whatever reason,
+-- replacing a GETIMPORT instruction with a MOVE instruction.
 
 local p = pairs
 local ts = tostring
