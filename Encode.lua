@@ -150,7 +150,7 @@ functions = {
 		buwu8(buf,2,v.B)
 		return buf
 	end,
-	function(v)
+	function(v) -- Table
 		local objs = {}
 		local total = 0
 		for _,a in p(v.Value) do
@@ -167,12 +167,8 @@ functions = {
 		end
 		return out
 	end,
-	nil,
-	function(v) -- Boolean
-		local buf = bucr(1)
-		buwu8(buf,0,(if v.Value then 1 else 0))
-		return buf
-	end,
+	nil, -- DO NOT USE: End marker for tables.
+	nil -- not populated
 }
 
 module.Convert = function(v)
