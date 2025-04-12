@@ -64,6 +64,7 @@ local functions = {
 			local bool = b3ba(b3rs(byte, 5-i),1)
 			ti(bools,bool==1)
 		end
+		if amt == 1 then bools = unpack(bools) end
 		return bools,offset
 	end,
 	function(input: buffer, offset: number) -- UInt8
@@ -186,13 +187,9 @@ local functions = {
 		offset+=3
 		return C3r(R,G,B),offset
 	end,
-	nil,
-	nil,
-	function(input: buffer, offset: number) -- Boolean
-		local b = buru8(input, offset)
-		offset+=1
-		return (b==1),offset
-	end,
+	nil, -- DO NOT USE: Handled elsewhere, begin marker for tables.
+	nil, -- DO NOT USE: End marker for tables.
+	nil, -- not populated
 }
 
 module.ReadType = function(input: buffer, offset: number, type: number)
