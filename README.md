@@ -11,21 +11,25 @@ NetShrink is the main script you will be requiring. If you are setting up manual
 
 ## Encoding data for transmission
 To encode data into a buffer, you call the `NetShrink.Encode` function which takes a variable number of arguments.<br>
-These arguments will be the variables you compress into the buffer for transmission (with one exception, see below the code),<br>
-but these have to be passed through a custom NetShrink function to convert them into proper data for encoding.<br>
-Many of them exist and they are all documented below, but here is a code example:
+If you want to encode a table of arguments to avoid register limits, NetShrink offers a variant called `NetShrink.EncodeT`<br>
+These arguments you send will be the variables you compress into the buffer for transmission.<br>
+Here is a code example of how you encode data:
 ```
 local encoded = NetShrink.Encode(
-	NetShrink.UInt8(127),
-	NetShrink.UInt16(65533),
-	NetShrink.UInt32(4294967295)
+	123,
+	{["test1"] = "test2"},
+	0.5
 )
--- To get encoded size, do buffer.len(encoded)
-game.ReplicatedStorage.UnreliableRemoteEvent:FireServer(encoded)
+print("Successfully encoded to "..buffer.len(encoded).." bytes.")
 ```
-When a function like `NetShrink.UInt8` is used, it always returns a table.<br>
-If you add a `number` as the last argument in Encode, it will treat that as an encryption key and you will receive an encrypted buffer.<br>
-To decode the encrypted buffer, you must provide the same key to Decode that was used during encoding.
+<br>
+<b>To reduce data usage, see the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-data-usage">Optimizing data usage</a>"</b>
+
+## Encrypting data
+Once you've ran `NetShrink.Encode` and gotten your buffer, you can also choose to encrypt it using `NetShrink.Encrypt`<br>
+This function takes two arguments, the buffer and a numeric key to use for encryption and it will return the encrypted buffer.<br>
+The encryption works by using the number as a seed to randomly XOR shift every single byte.<br>
+To decrypt you have two options, either use `NetShrink.Encrypt` again with the same key, or see the section "[Decoding data](https://github.com/EmK530/NetShrink#Decoding-data)"
 
 ## Decoding data
 To decode data from a buffer, call the `NetShrink.Decode` function.<br>
@@ -37,17 +41,57 @@ This argument must be used if you are decoding an encrypted buffer and the key m
 
 If we are trying to decode our example transmission, here's a simple example:
 ```
-game.ReplicatedStorage.Unrel.OnServerEvent:Connect(function(plr,data)
-  print(NetShrink.Decode(data,true)) -- prints a table
-  print(NetShrink.Decode(data)) -- prints: 127 65533 4294967295
-end)
+print(NetShrink.Decode(encoded,true)) -- prints a table
+print(NetShrink.Decode(encoded)) -- prints: 123 {...} 0.5
 ```
-If `data` was encrypted, adding the key used during encoding as the third argument to Decode will make sure the buffer is read correctly.
+If `encoded` was encrypted, adding the key used during encoding as the third argument to Decode will make sure the buffer is read correctly.
+
+## Optimizing data usage
+Now that NetShrink's recommended encoding method is to handle type conversion automatically,<br>
+there are some configs offered to control how aggressive the compression should be for auto conversion.<br>
+These settings are accessible through `NetShrink.Config.AutoConversion` and here are all the currently available settings:<br>
+#### Strings.CompressMode
+Controls the compression method that is attempted on all converted strings.<br>
+**Default value: 1 (DEFLATE)**
+
+#### Strings.CompressLevel
+Controls the compression level that is used with the compression method.<br>
+**Default value: 9**
+
+#### Preferf32
+Compresses all floating numbers as 32-bit, not 64-bit, cutting data size in half. Applies to:<br>
+- Decimal Numbers
+- Vector2/Vector3
+- CFrame
+- Color3 (if Use3bColors is false)
+
+**Default value: false**
+
+#### Use3bColors
+Compresses every Color3 channel as a UInt8 instead of a floating point number, reducing size from 12/24 bytes to 3 bytes.<br>
+**Default value: true**
+
+#### UseEulerCFrames
+Compresses CFrames with only XYZ coordinates and euler angles, cutting data size in half.<br>
+**Default value: false**
+
+## What's with these type functions?
+Before NetShrink updated to v1.3, you would have to convert your variables to NetShrink data types manually.<br>
+This is handled automatically now, but you also have the choice to do the conversion yourself with `NetShrink.EncodeManual`<br>
+Here's a code example of encoding with EncodeManual, and below you will find [Documentation](https://github.com/EmK530/NetShrink#Documentation) of all types you can encode.<br>
+```
+local encoded = NetShrink.EncodeManual(
+	NetShrink.UInt8(127),
+	NetShrink.UInt16(65533),
+	NetShrink.UInt32(4294967295),
+	NetShrink.Table(NetShrink.Single(0.5)),
+	NetShrink.Dictionary({[NetShrink.String("test",0,0)] = NetShrink.Boolean5(true)})
+)
+```
 
 ## Documentation
 Below is a list of all supported data types and their respective functions and documentation.
 - [String](https://github.com/EmK530/NetShrink#string)
-- [Boolean](https://github.com/EmK530/NetShrink#boolean)
 - [Boolean5](https://github.com/EmK530/NetShrink#boolean5)
 - [UInt8](https://github.com/EmK530/NetShrink#uint8)
 - [UInt16](https://github.com/EmK530/NetShrink#uint16)
@@ -71,16 +115,10 @@ Arguments: `input: string`, `compressMode: number`, `compressLevel: number`<br>
 Example: `NetShrink.String("aaaaaaaaaaaaa",1,9)`
 <hr>
 
-### Boolean
-Stores one boolean into one byte. For more efficiency see [Boolean5](https://github.com/EmK530/NetShrink#boolean5).<br>
-Arguments: `bool: boolean`<br>
-Example: `NetShrink.Boolean(true)`
-<hr>
-
 ### Boolean5
 Stores up to 5 booleans into one byte.<br>
 Arguments: `...`, only booleans can be sent, exceeding 5 arguments or sending none causes an error.<br>
-Decodes to a table of booleans.<br>
+If more than one boolean is encoded, it decodes as a table of booleans.<br>
 Example: `NetShrink.Boolean5(true,true,false,false,true)`
 <hr>
 
@@ -158,7 +196,14 @@ Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))`
 
 ### Table
 Accepts a variable number of data type arguments and instructs NetShrink to encode them into a table.<br>
-It is possible to put tables into tables, however dictionaries are not supported. Cost per table is 1 byte.<br>
+Tables can be placed within eachother endlessly. Cost per table is 1 byte.<br>
 Arguments: `...`<br>
 Example: `NetShrink.Table(NetShrink.UInt8(127),NetShrink.UInt16(32767))`
+<hr>
+
+### Dictionary
+Accepts a table with NetShrink DataType keys & values and encodes as a dictionary.<br>
+Like with tables, you can have dictionaries in dictionaries. Cost per dictionary is 1.5 bytes.<br>
+Arguments: `input: {}`<br>
+Example: `NetShrink.Dictionary({[NetShrink.String("testKey",0,0)] = NetShrink.UInt8(123)})`
 <hr>
