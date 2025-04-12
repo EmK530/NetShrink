@@ -138,7 +138,8 @@ module.Decode = function(input: buffer, asTable, key)
 				tr(layers, layer + 1)
 				cur = n
 				i += 1
-				if startLayer == layer and not insert then
+				if startLayer >= layer and not insert then
+					layer = startLayer
 					return ret
 				else
 					ti(n, ret)
@@ -152,13 +153,13 @@ module.Decode = function(input: buffer, asTable, key)
 				while true do
 					local ty2 = dataTypes[i]
 					if ty2 == 14 then
-						if swap then break else swap = true tgt = values end
 						i += 1
+						if swap then break else swap = true tgt = values end
 					else
-						ti(tgt,decodeRecursive(false))
+						local a = decodeRecursive(false)
+						ti(tgt,a)
 					end
 				end
-				i += 1
 				local ret = {}
 				for i = 1, min(#keys,#values) do
 					local v1,v2 = keys[i],values[i]
@@ -166,12 +167,17 @@ module.Decode = function(input: buffer, asTable, key)
 						ret[v1] = v2
 					end
 				end
-				ti(cur, ret)
+				if not insert then
+					return ret
+				else
+					ti(cur, ret)
+				end
 			else
 				local ret, r = Decode.ReadType(input, offset, ty)
 				offset = r
 				i += 1
-				if startLayer == layer and not insert then
+				if startLayer >= layer and not insert then
+					layer = startLayer
 					return ret
 				else
 					if ret ~= nil then ti(cur, ret) end
