@@ -59,7 +59,7 @@ Controls the compression level that is used with the compression method.<br>
 **Default value: 9**
 
 #### Preferf32
-Compresses all floating numbers as 32-bit, not 64-bit, cutting data size in half. Applies to:<br>
+Compresses all floating point numbers as 32-bit, not 64-bit, cutting data size and precision in half. Applies to:<br>
 - Decimal Numbers
 - Vector2/Vector3
 - CFrame
