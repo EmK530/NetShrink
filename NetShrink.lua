@@ -254,7 +254,6 @@ module.EncodeManual = function(...)
 	local vls = bule(varlen)
 	local offset = 4+vls
 	buco(dataTypesBuffer,4,varlen,0,vls)
-	print("Encoded datatypes: "..dataTypesSize)
 	local bitBuffer = 0
 	local bitsUsed = 0
 	for _, v in p(dataTypes) do
