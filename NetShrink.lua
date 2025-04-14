@@ -208,18 +208,6 @@ module.Decode = function(input: buffer, asTable, key)
 	end
 end
 
-module.Decode_str = function(input: string, asTable, key)
-	return module.Decode(bufs(input),asTable,key)
-end
-
-module.ToString = function(input: buffer)
-	return buts(input)
-end
-
-module.ToBuffer = function(input: string)
-	return bufs(input)
-end
-
 local EncodeList
 
 local max = 2^DataTypeBits-1
