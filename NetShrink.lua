@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.3
+NetShrink v1.3.1
 Developed by EmK530
 
 ]]
@@ -70,12 +70,14 @@ module.Config = {
 	["AutoConversion"] = {
 		["Strings"] = {
 			["CompressMode"] = 1,
-			["CompressLevel"] = 9
+			["CompressLevel"] = 5
 		},
 		["Preferf32"] = false,
 		["Use3bColors"] = true,
 		["UseEulerCFrames"] = false
-	}
+	},
+	["CompressMode"] = 1,
+	["CompressLevel"] = 5
 }
 
 -- Encrypts/decrypts your NetShrink buffer through XOR shifting using random numbers with the key as a seed
@@ -96,8 +98,21 @@ module.Decode = function(input: buffer, asTable, key)
 	end
 	local st = burs(input,0,4)
 	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NShd' header but got '"..st.."'")
-	local dataTypesSize,read = Decode.DecodeVarLength(input,4)
-	local offset = 4+read
+	local offset = 5
+	
+	local compressMode = buru8(input,4)
+	if compressMode > 0 then
+		local len,steps = Decode.DecodeVarLength(input,5)
+		local data = burs(input,5+steps,len)
+		local dec = Comp[compressModeTargets[compressMode]].Decompress(data)
+		len = #dec
+		input = bucr(len)
+		buws(input,0,dec,len)
+		offset = 0
+	end
+	
+	local dataTypesSize,read = Decode.DecodeVarLength(input,offset)
+	offset += read
 	local dataTypes = {}
 	local bitBuffer = 0
 	local bitsUsed = 0
@@ -248,12 +263,12 @@ module.EncodeManual = function(...)
 	local dataTypes = {}
 	local encodedData = {}
 	local dataTypesSize = RecursiveEncode({...},encodedData,dataTypes)
-	local dataTypesBuffer = bucr(5 + mace(dataTypesSize * DataTypeBits / 8))
-	buws(dataTypesBuffer,0,"NShd")
+	local dataTypesBuffer = bucr(1 + mace(dataTypesSize * DataTypeBits / 8))
+	--buws(dataTypesBuffer,0,"NShd")
 	local varlen = Encode.EncodeVarLength(dataTypesSize)
 	local vls = bule(varlen)
-	local offset = 4+vls
-	buco(dataTypesBuffer,4,varlen,0,vls)
+	local offset = vls
+	buco(dataTypesBuffer,0,varlen,0,vls)
 	local bitBuffer = 0
 	local bitsUsed = 0
 	for _, v in p(dataTypes) do
@@ -283,7 +298,34 @@ module.EncodeManual = function(...)
 		buco(finalBuffer, finalOffset, v, 0, s)
 		finalOffset+=s
 	end
-	return finalBuffer
+	
+	local cfg = module.Config
+	local cm = cfg.CompressMode
+	if cm > 0 then
+		local cl = cfg.CompressLevel
+		local tgt = Comp[compressModeTargets[cm]]
+		local lenBuffer = bule(finalBuffer)
+		local compString = tgt.Compress(burs(finalBuffer,0,lenBuffer),{level=cl,strategy="fixed"})
+		local complen = #compString
+		if complen < lenBuffer then
+			local lenAsBytes = Encode.EncodeVarLength(complen)
+			local lenbytecount = bule(lenAsBytes)
+			local finalBuffer2 = bucr(complen+5+lenbytecount)
+			buws(finalBuffer2,0,"NShd",4)
+			buwu8(finalBuffer2,4,cm)
+			buco(finalBuffer2,5,lenAsBytes,0,lenbytecount)
+			buws(finalBuffer2,5+lenbytecount,compString,complen)
+			return finalBuffer2
+		end
+	end
+	
+	local lenBuffer = bule(finalBuffer)
+	local finalBuffer2 = bucr(lenBuffer+5)
+	buws(finalBuffer2,0,"NShd",4)
+	buwu8(finalBuffer2,4,0)
+	buco(finalBuffer2,5,finalBuffer,0,lenBuffer)
+	
+	return finalBuffer2
 end
 
 -- Data Types
