@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.3.1
+NetShrink v1.3.2
 Developed by EmK530
 
 ]]
@@ -53,6 +53,8 @@ local buru8 = buffer.readu8
 local buwu8 = buffer.writeu8
 local burs = buffer.readstring
 local buws = buffer.writestring
+local buts = buffer.tostring
+local bufs = buffer.fromstring
 local bule = buffer.len
 local min = math.min
 
@@ -105,9 +107,7 @@ module.Decode = function(input: buffer, asTable, key)
 		local len,steps = Decode.DecodeVarLength(input,5)
 		local data = burs(input,5+steps,len)
 		local dec = Comp[compressModeTargets[compressMode]].Decompress(data)
-		len = #dec
-		input = bucr(len)
-		buws(input,0,dec,len)
+		input = bufs(dec)
 		offset = 0
 	end
 	
@@ -206,6 +206,18 @@ module.Decode = function(input: buffer, asTable, key)
 	else
 		return unpack(returns)
 	end
+end
+
+module.Decode_str = function(input: string, asTable, key)
+	return module.Decode(bufs(input),asTable,key)
+end
+
+module.ToString = function(input: buffer)
+	return buts(input)
+end
+
+module.ToBuffer = function(input: string)
+	return bufs(input)
 end
 
 local EncodeList
