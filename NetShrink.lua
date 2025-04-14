@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.3.2
+NetShrink v1.3.1
 Developed by EmK530
 
 ]]
