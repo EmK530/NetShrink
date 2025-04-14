@@ -55,8 +55,8 @@ Controls the compression method that is attempted on all converted strings.<br>
 **Default value: 1 (DEFLATE)**
 
 #### Strings.CompressLevel
-Controls the compression level that is used with the compression method.<br>
-**Default value: 9**
+Controls the compression level that is used with the compression method, ignored if CompressMode is 0.<br>
+**Default value: 5**
 
 #### Preferf32
 Compresses all floating point numbers as 32-bit, not 64-bit, cutting data size and precision in half. Applies to:<br>
@@ -74,6 +74,17 @@ Compresses every Color3 channel as a UInt8 instead of a floating point number, r
 #### UseEulerCFrames
 Compresses CFrames with only XYZ coordinates and euler angles, cutting data size in half.<br>
 **Default value: false**
+<hr>
+
+There are also settings available for how the entire buffer gets compressed, accessible in `NetShrink.Config`:
+
+#### CompressMode
+The compression method that will be used on the final buffer output to reduce size.<br>
+**Default value: 1 (DEFLATE)**
+
+#### CompressLevel
+The compression level that will be used by the compression method, ignored if CompressMode is 0.<br>
+**Default value: 5**
 
 ## What's with these type functions?
 Before NetShrink updated to v1.3, you would have to convert your variables to NetShrink data types manually.<br>
