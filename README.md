@@ -116,6 +116,7 @@ Below is a list of all supported data types and their respective functions and d
 - [Color3](https://github.com/EmK530/NetShrink#color3)
 - [Color3b](https://github.com/EmK530/NetShrink#color3b)
 - [Table](https://github.com/EmK530/NetShrink#table)
+- [Dictionary](https://github.com/EmK530/NetShrink#dictionary)
 <hr>
 
 ### String
