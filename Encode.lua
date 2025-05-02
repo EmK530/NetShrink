@@ -247,7 +247,6 @@ functions = {
 				pos += off
 				func(buf,pos,c.B)
 				pos += off
-				print(pos)
 			end
 		end
 		return buf
