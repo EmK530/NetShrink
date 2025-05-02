@@ -110,13 +110,17 @@ Below is a list of all supported data types and their respective functions and d
 - [Single](https://github.com/EmK530/NetShrink#single)
 - [Double](https://github.com/EmK530/NetShrink#double)
 - [Vector2](https://github.com/EmK530/NetShrink#vector2)
+- [Vector2int16](https://github.com/EmK530/NetShrink#vector2int16)
 - [Vector3](https://github.com/EmK530/NetShrink#vector3)
+- [Vector3int16](https://github.com/EmK530/NetShrink#vector3int16)
 - [CFrame](https://github.com/EmK530/NetShrink#cframe)
 - [CFrameEuler](https://github.com/EmK530/NetShrink#cframeeuler)
 - [Color3](https://github.com/EmK530/NetShrink#color3)
 - [Color3b](https://github.com/EmK530/NetShrink#color3b)
+- [ColorSequence](https://github.com/EmK530/NetShrink#colorsequence)
 - [Table](https://github.com/EmK530/NetShrink#table)
 - [Dictionary](https://github.com/EmK530/NetShrink#dictionary)
+- [Nil](https://github.com/EmK530/NetShrink#nil)
 <hr>
 
 ### String
@@ -171,11 +175,23 @@ Arguments: `input: Vector2`, `float: boolean`, setting `float` to true will enco
 Example: `NetShrink.Vector2(Vector2.new(384956,29538),true)`, this encodes as single-precision.
 <hr>
 
+### Vector2int16
+Stores a Vector2int16 into 4 bytes.<br>
+Arguments: `input: Vector2int16`<br>
+Example: `NetShrink.Vector2int16(Vector2int16.new(32767,-32768))`
+<hr>
+
 ### Vector3
 Stores a Vector3 with an option to use single-precision to reduce size by half.<br>
 Sizes: `Single-precision: 12 bytes`, `Double-precision: 24 bytes.`<br>
 Arguments: `input: Vector3`, `float: boolean`, setting `float` to true will encode the Vector3 as single-precision, sacrificing precision for size.<br>
 Example: `NetShrink.Vector3(Vector3.new(384956,29538,347835),true)`, this encodes as single-precision.
+<hr>
+
+### Vector3int16
+Stores a Vector3int16 into 6 bytes.<br>
+Arguments: `input: Vector3int16`<br>
+Example: `NetShrink.Vector3int16(Vector3int16.new(32767,-32768,16384))`
 <hr>
 
 ### CFrame
@@ -194,28 +210,41 @@ Example: `NetShrink.CFrameEuler(workspace.SpawnLocation.CFrame,true)`, this enco
 <hr>
 
 ### Color3
-Stores a Color3 with an option to use single-precision to reduce size by half.<br>
-Sizes: `Single-precision: 12 bytes`, `Double-precision: 24 bytes.`<br>
-Arguments: `input: Color3`, `float: boolean`, setting `float` to true will encode the Color3 as single-precision, sacrificing precision for size.<br>
-Example: `NetShrink.Color3(Color3.fromRGB(255,127,64),true)`, this encodes as single-precision.
+Stores a Color3/BrickColor with an option to use single-precision to reduce size by half.<br>
+Sizes: `Single-precision: 14 bytes`, `Double-precision: 26 bytes.`<br>
+Arguments: `input: Color3/BrickColor`, `float: boolean`, setting `float` to true will encode the color as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.Color3(Color3.fromRGB(255,127,64),true)`, this encodes a Color3 as single-precision.<br>
+Example #2: `NetShrink.Color3(BrickColor.new("Bright red"))`, this encodes a BrickColor as double-precision.
 <hr>
 
 ### Color3b
-Stores a Color3 as a 3-byte RGB value from 0-255. Any number outside this range will be clamped.<br>
-Arguments: `input: Color3`<br>
-Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))`
+Stores a Color3/BrickColor as a 3-byte RGB value from 0-255. Any number outside this range will be clamped.<br>
+Arguments: `input: Color3/BrickColor`<br>
+Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))` or `NetShrink.Color3b(BrickColor.new("Bright red"))`
+<hr>
+
+### ColorSequence
+Stores a ColorSequence with two options, "float" for encoding all decimal numbers as single-precision and "byte" for using 3-byte colors.<br>
+Sizes: `3 bytes` + `7/11/16/32 bytes`, size varies with input settings.<br>
+Arguments: `input: ColorSequence`, `float: boolean`, `byte: boolean`<br>
+Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))` or `NetShrink.Color3b(BrickColor.new("Bright red"))`
 <hr>
 
 ### Table
 Accepts a variable number of data type arguments and instructs NetShrink to encode them into a table.<br>
-Tables can be placed within eachother endlessly. Cost per table is 1 byte.<br>
+Tables can be placed within eachother endlessly. Cost per table is 1.25 bytes.<br>
 Arguments: `...`<br>
 Example: `NetShrink.Table(NetShrink.UInt8(127),NetShrink.UInt16(32767))`
 <hr>
 
 ### Dictionary
 Accepts a table with NetShrink DataType keys & values and encodes as a dictionary.<br>
-Like with tables, you can have dictionaries in dictionaries. Cost per dictionary is 1.5 bytes.<br>
+Like with tables, you can have dictionaries in dictionaries. Cost per dictionary is 1.875 bytes.<br>
 Arguments: `input: {}`<br>
 Example: `NetShrink.Dictionary({[NetShrink.String("testKey",0,0)] = NetShrink.UInt8(123)})`
+<hr>
+
+### Nil
+Stores a nil value, that's about it.<br>
+Example: `NetShrink.Nil()`
 <hr>
