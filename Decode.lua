@@ -13,6 +13,7 @@ local burs = buffer.readstring
 
 local V2n = Vector2.new
 local V3n = Vector3.new
+local BCn = BrickColor.new
 local C3n = Color3.new
 local C3r = Color3.fromRGB
 local CFn = CFrame.new
@@ -164,7 +165,8 @@ local functions = {
 		return (CFe(rX,rY,rZ)+V3n(X,Y,Z)),offset
 	end,
 	function(input: buffer, offset: number) -- Color3
-		local comp = buru8(input, offset)
+		local brick = buru8(input, offset)
+		local comp = buru8(input, offset+1)
 		local func,mult
 		if comp == 1 then
 			func = burf32
@@ -173,23 +175,76 @@ local functions = {
 			func = burf64
 			mult = 2
 		end
-		offset+=1
+		offset+=2
 		local R = func(input, offset)
 		local G = func(input, offset+4*mult)
 		local B = func(input, offset+8*mult)
 		offset+=12*mult
-		return C3n(R,G,B),offset
+		if brick == 1 then
+			return BCn(R,G,B),offset
+		else
+			return C3n(R,G,B),offset
+		end
 	end,
 	function(input: buffer, offset: number) -- Color3b
-		local R = buru8(input, offset)
-		local G = buru8(input, offset+1)
-		local B = buru8(input, offset+2)
-		offset+=3
-		return C3r(R,G,B),offset
+		local brick = buru8(input, offset)
+		local R = buru8(input, offset+1)
+		local G = buru8(input, offset+2)
+		local B = buru8(input, offset+3)
+		offset+=4
+		if brick == 1 then
+			return BCn(R/255,G/255,B/255),offset
+		else
+			return C3r(R,G,B),offset
+		end
 	end,
 	nil, -- DO NOT USE: Handled elsewhere, begin marker for tables.
 	nil, -- DO NOT USE: End marker for tables.
-	nil, -- not populated
+	nil, -- DO NOT USE: Handled elsewhere, begin marker for dictionaries.
+	function(input: buffer, offset:number) -- nil
+		return nil,offset
+	end,
+	function(input: buffer, offset:number) -- ColorSequence
+		local count, off = module.DecodeVarLength(input, offset)
+		offset += off
+		local float = buru8(input, offset)==1 offset += 1
+		local bytes = buru8(input, offset)==1 offset += 1
+		local times = {}
+		local keypoints = {}
+		local func,add
+		if float then func,add = burf32,4 else func,add = burf64,8 end
+		for i = 1, count do
+			ti(times, func(input, offset))
+			offset += add
+		end
+		for i = 1, count do
+			local col
+			if bytes then
+				local r = buru8(input, offset) offset += 1
+				local g = buru8(input, offset) offset += 1
+				local b = buru8(input, offset) offset += 1
+				col = C3r(r,g,b)
+			else
+				local r = func(input, offset) offset += add
+				local g = func(input, offset) offset += add
+				local b = func(input, offset) offset += add
+				col = C3n(r,g,b)
+			end
+			ti(keypoints, ColorSequenceKeypoint.new(times[i],col))
+		end
+		return ColorSequence.new(keypoints),offset
+	end,
+	function(input: buffer, offset:number)
+		local X = buru16(input, offset) offset += 2
+		local Y = buru16(input, offset) offset += 2
+		return Vector2int16.new(X-32768,Y-32768),offset
+	end,
+	function(input: buffer, offset:number)
+		local X = buru16(input, offset) offset += 2
+		local Y = buru16(input, offset) offset += 2
+		local Z = buru16(input, offset) offset += 2
+		return Vector3int16.new(X-32768,Y-32768,Z-32768),offset
+	end,
 }
 
 module.ReadType = function(input: buffer, offset: number, type: number)
