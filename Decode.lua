@@ -234,12 +234,12 @@ local functions = {
 		end
 		return ColorSequence.new(keypoints),offset
 	end,
-	function(input: buffer, offset:number)
+	function(input: buffer, offset:number) -- Vector2int16
 		local X = buru16(input, offset) offset += 2
 		local Y = buru16(input, offset) offset += 2
 		return Vector2int16.new(X-32768,Y-32768),offset
 	end,
-	function(input: buffer, offset:number)
+	function(input: buffer, offset:number) -- Vector3int16
 		local X = buru16(input, offset) offset += 2
 		local Y = buru16(input, offset) offset += 2
 		local Z = buru16(input, offset) offset += 2
