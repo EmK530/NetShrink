@@ -2,7 +2,9 @@ local module = {}
 
 --[[
 
-NetShrink v1.3.1
+NetShrink v1.4.0
+Compressing anything possible into binary data!
+
 Developed by EmK530
 
 ]]
@@ -53,8 +55,6 @@ local buru8 = buffer.readu8
 local buwu8 = buffer.writeu8
 local burs = buffer.readstring
 local buws = buffer.writestring
-local buts = buffer.tostring
-local bufs = buffer.fromstring
 local bule = buffer.len
 local min = math.min
 
@@ -66,7 +66,7 @@ local compressModeTargets = {
 -- Possible Storage: 2 ^ DataTypeBits
 -- 2, 4, 8, 16, 32, 64, 128, 256
 -- Should not exceed 8
-local DataTypeBits = 4
+local DataTypeBits = 5
 
 module.Config = {
 	["AutoConversion"] = {
@@ -107,7 +107,9 @@ module.Decode = function(input: buffer, asTable, key)
 		local len,steps = Decode.DecodeVarLength(input,5)
 		local data = burs(input,5+steps,len)
 		local dec = Comp[compressModeTargets[compressMode]].Decompress(data)
-		input = bufs(dec)
+		len = #dec
+		input = bucr(len)
+		buws(input,0,dec,len)
 		offset = 0
 	end
 	
@@ -132,7 +134,9 @@ module.Decode = function(input: buffer, asTable, key)
 	end
 	local returns = {}
 	local cur = returns
+	local pos = 1
 	local layers = {returns}
+	local positions = {}
 	local layer = 1
 	local i = 1
 	local decodeRecursive
@@ -141,6 +145,8 @@ module.Decode = function(input: buffer, asTable, key)
 		while i <= #dataTypes do
 			local ty = dataTypes[i]
 			if ty == 13 then
+				positions[layer] = pos
+				pos = 1
 				layer += 1
 				local new = {}
 				ti(layers, new)
@@ -148,6 +154,7 @@ module.Decode = function(input: buffer, asTable, key)
 				i += 1
 			elseif ty == 14 then
 				layer -= 1
+				pos = positions[layer]+1 -- +1 otherwise the recently created table/dictionary is overwritten
 				local ret = cur
 				local n = layers[layer]
 				tr(layers, layer + 1)
@@ -185,17 +192,19 @@ module.Decode = function(input: buffer, asTable, key)
 				if not insert then
 					return ret
 				else
-					ti(cur, ret)
+					cur[pos] = ret
+					pos += 1
+					--ti(cur, ret)
 				end
 			else
 				local ret, r = Decode.ReadType(input, offset, ty)
-				offset = r
 				i += 1
+				offset = r
 				if startLayer >= layer and not insert then
 					layer = startLayer
 					return ret
 				else
-					if ret ~= nil then ti(cur, ret) end
+					if ty == 16 or ret ~= nil then cur[pos] = ret pos+=1 end
 				end
 			end
 		end
@@ -285,7 +294,6 @@ module.EncodeManual = function(...)
 		buwu8(dataTypesBuffer, offset, bitBuffer)
 		offset+=1
 	end
-	
 	local encodedDataSize = 0
 	for _, v in p(encodedData) do
 		encodedDataSize+=bule(v)
@@ -468,6 +476,17 @@ module.Vector2 = function(input: Vector2, float: boolean)
 end
 
 --[[
+Create a NetShrink data type for a Vector2int16.
+Size: 4 bytes.
+]]
+module.Vector2int16 = function(input: Vector2int16)
+	return {
+		DataType = 18,
+		Data = {input.X,input.Y}
+	}
+end
+
+--[[
 Create a NetShrink data type for a Vector3.
 Size: 12 bytes as float, 24 bytes as double.
 ]]
@@ -476,6 +495,17 @@ module.Vector3 = function(input: Vector3, float: boolean)
 	return {
 		DataType = 8,
 		comp = float,
+		Data = {input.X,input.Y,input.Z}
+	}
+end
+
+--[[
+Create a NetShrink data type for a Vector3int16.
+Size: 6 bytes.
+]]
+module.Vector3int16 = function(input: Vector3int16)
+	return {
+		DataType = 19,
 		Data = {input.X,input.Y,input.Z}
 	}
 end
@@ -508,16 +538,24 @@ module.CFrameEuler = function(input: CFrame, float: boolean)
 	}
 end
 
+local indexes = { -- screw you BrickColor for having lowercase indexes >:(
+	["BrickColor"] = {"r","g","b"},
+	["Color3"] = {"R","G","B"}
+}
+
 --[[
-Create a NetShrink data type for a Color3.
-Size: 12 bytes as float, 24 bytes as double.
+Create a NetShrink data type for a Color3/BrickColor.
+Size: 14 bytes as float, 26 bytes as double.
 ]]
-module.Color3 = function(input: Color3, float: boolean)
+module.Color3 = function(input, float: boolean)
 	if not float then float = false end
+	local t = typeof(input)
+	local idx = indexes[t]
 	return {
 		DataType = 11,
 		comp = float,
-		Data = {input.R,input.G,input.B}
+		Brick = t~="Color3",
+		Data = {input[idx[1]],input[idx[2]],input[idx[3]]}
 	}
 end
 
@@ -529,16 +567,19 @@ local function toByte(num)
 end
 
 --[[
-Create a NetShrink data type for a Color3.
+Create a NetShrink data type for a Color3/BrickColor.
 This variant loses some precision by converting each color channel to a single byte.
 Size: 3 bytes.
 ]]
-module.Color3b = function(input: Color3)
+module.Color3b = function(input)
+	local t = typeof(input)
+	local idx = indexes[t]
 	return {
 		DataType = 12,
-		R = toByte(input.R),
-		G = toByte(input.G),
-		B = toByte(input.B)
+		Brick = t~="Color3",
+		R = toByte(input[idx[1]]),
+		G = toByte(input[idx[2]]),
+		B = toByte(input[idx[3]])
 	}
 end
 
@@ -570,10 +611,6 @@ module.Dictionary = function(v: {})
 		if t1 == "table" and t2 == "table" and i["DataType"] and v["DataType"] then
 			t[i] = v
 		else
-			if t1 ~= "table" then
-				warn("[NetShrink] Ignoring non-datatype dictionary key: "..i)
-				continue
-			end
 			warn("[NetShrink] Ignoring non-datatype dictionary key: "..i)
 			continue
 		end
@@ -582,6 +619,22 @@ module.Dictionary = function(v: {})
 		DataType = 15,
 		Value = t
 	}
+end
+
+--[[
+Create a NetShrink data type for a nil value.
+Size: 0 bytes.
+]]
+module.Nil = function()
+	return { DataType = 16 }
+end
+
+--[[
+Create a NetShrink data type for a ColorSequence
+Size: 3 bytes + (7/11/16/32 bytes per keypoint depending on settings).
+]]
+module.ColorSequence = function(input: ColorSequence, float: boolean, byte: boolean)
+	return { DataType = 17, comp1 = float, comp2 = byte, Value = input }
 end
 
 local function Boolean5Compatible(v: {})
@@ -617,14 +670,15 @@ VtoDT = {
 		local stuff = {}
 		local is_dict = IsDictionary(v)
 		if not is_dict then -- Encode as table
-			for _,v in v do
-				local t = typeof(v)
+			for i = 1, #v do
+				local ent = v[i]
+				local t = typeof(ent)
 				local converter = VtoDT[t]
 				if not converter then
 					warn("[NetShrink] Unsupported variable type: "..t)
 					continue
 				end
-				local result = converter(v)
+				local result = converter(ent)
 				if result then
 					ti(stuff, result)
 				end
@@ -655,13 +709,29 @@ VtoDT = {
 		local ac = module.Config.AutoConversion
 		return module[if ac.UseEulerCFrames then "CFrameEuler" else "CFrame"](v,ac.Preferf32)
 	end,
-	["Color3"] = function(v: Color3)
+	["Color3"] = function(v)
 		local ac = module.Config.AutoConversion
 		if ac.Use3bColors then
 			return module.Color3b(v)
 		end
 		return module.Color3(v,ac.Preferf32)
 	end,
+	["BrickColor"] = function(v: BrickColor)
+		return VtoDT["Color3"](v) -- xd
+	end,
+	["nil"] = function(v: nil)
+		return module.Nil()
+	end,
+	["ColorSequence"] = function(v: ColorSequence)
+		local ac = module.Config.AutoConversion
+		return module.ColorSequence(v, ac.Preferf32, ac.Use3bColors)
+	end,
+	["Vector2int16"] = function(v: Vector2int16)
+		return module.Vector2int16(v)
+	end,
+	["Vector3int16"] = function(v: Vector3int16)
+		return module.Vector3int16(v)
+	end
 }
 
 --[[
@@ -671,7 +741,9 @@ Automatically converts variables in the table to NetShrink data types then encod
 ]]
 module.EncodeT = function(t: {})
 	local dataTypes = {}
-	for _,v in t do
+	local n = t["n"] or #t
+	for i = 1, n do
+		local v = t[i] -- fixes missing nil entries
 		local t = typeof(v)
 		local converter = VtoDT[t]
 		if not converter then
@@ -688,7 +760,7 @@ end
 
 -- Automatically convert variables to NetShrink data types and encode it to a buffer
 module.Encode = function(...)
-	return module.EncodeT({...})
+	return module.EncodeT(table.pack(...))
 end
 
 return module
