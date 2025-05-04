@@ -24,6 +24,7 @@ print("Successfully encoded to "..buffer.len(encoded).." bytes.")
 ```
 <br>
 <b>To reduce data usage, see the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-data-usage">Optimizing data usage</a>"</b>
+<b>To optimize performance, see the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-performance">Optimizing performance</a>"</b>
 
 ## Encrypting data
 Once you've ran `NetShrink.Encode` and gotten your buffer, you can also choose to encrypt it using `NetShrink.Encrypt`<br>
@@ -46,17 +47,23 @@ print(NetShrink.Decode(encoded)) -- prints: 123 {...} 0.5
 ```
 If `encoded` was encrypted, adding the key used during encoding as the third argument to Decode will make sure the buffer is read correctly.
 
+## Optimizing performance
+Compression is an expensive part of NetShrink.<br>
+If you need to perform a lot of encode/decode operations for cases like Multiplayer, it is recommended to disable compression.<br>
+To do this, you mainly want to set `NetShrink.Config.CompressMode` to 0 to not pass the output through DEFLATE.<br>
+This increases the output size, so check the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-data-usage">Optimizing data usage</a>" to find ways to counter that.
+
 ## Optimizing data usage
 Now that NetShrink's recommended encoding method is to handle type conversion automatically,<br>
 there are some configs offered to control how aggressive the compression should be for auto conversion.<br>
 These settings are accessible through `NetShrink.Config.AutoConversion` and here are all the currently available settings:<br>
 #### Strings.CompressMode
-Controls the compression method that is attempted on all converted strings.<br>
-**Default value: 1 (DEFLATE)**
+Controls the compression method that is attempted on all converted strings. Unnecessary and not recommended for performance.<br>
+**Default value: 0 (None)**
 
 #### Strings.CompressLevel
 Controls the compression level that is used with the compression method, ignored if CompressMode is 0.<br>
-**Default value: 5**
+**Default value: 1**
 
 #### Preferf32
 Compresses all floating point numbers as 32-bit, not 64-bit, cutting data size and precision in half. Applies to:<br>
@@ -79,12 +86,16 @@ Compresses CFrames with only XYZ coordinates and euler angles, cutting data size
 There are also settings available for how the entire buffer gets compressed, accessible in `NetShrink.Config`:
 
 #### CompressMode
-The compression method that will be used on the final buffer output to reduce size.<br>
+The compression method that will be used on the final buffer output to reduce size. Not recommended for performance.<br>
 **Default value: 1 (DEFLATE)**
 
 #### CompressLevel
 The compression level that will be used by the compression method, ignored if CompressMode is 0.<br>
-**Default value: 5**
+**Default value: 1**
+
+#### DebugProfiling
+Adds debug profiling for encode/decode processes to measure execution time in the Micro Profiler.<br>
+**Default value: false**
 
 ## What's with these type functions?
 Before NetShrink updated to v1.3, you would have to convert your variables to NetShrink data types manually.<br>
