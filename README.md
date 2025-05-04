@@ -23,7 +23,7 @@ local encoded = NetShrink.Encode(
 print("Successfully encoded to "..buffer.len(encoded).." bytes.")
 ```
 <br>
-<b>To reduce data usage, see the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-data-usage">Optimizing data usage</a>"</b>
+<b>To reduce data usage, see the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-data-usage">Optimizing data usage</a>"</b><br>
 <b>To optimize performance, see the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-performance">Optimizing performance</a>"</b>
 
 ## Encrypting data
