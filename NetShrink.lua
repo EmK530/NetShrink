@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.4.0
+NetShrink v1.4.1
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -71,24 +71,42 @@ local DataTypeBits = 5
 module.Config = {
 	["AutoConversion"] = {
 		["Strings"] = {
-			["CompressMode"] = 1,
-			["CompressLevel"] = 5
+			["CompressMode"] = 0,
+			["CompressLevel"] = 1
 		},
 		["Preferf32"] = false,
 		["Use3bColors"] = true,
 		["UseEulerCFrames"] = false
 	},
 	["CompressMode"] = 1,
-	["CompressLevel"] = 5
+	["CompressLevel"] = 1,
+	["DebugProfiling"] = false
 }
+
+local dpb_cache = debug.profilebegin
+local dpe_cache = debug.profileend
+
+local function dpb(str: string)
+	if module.Config.DebugProfiling then
+		dpb_cache(str)
+	end
+end
+
+local function dpe()
+	if module.Config.DebugProfiling then
+		dpe_cache()
+	end
+end
 
 -- Encrypts/decrypts your NetShrink buffer through XOR shifting using random numbers with the key as a seed
 module.Encrypt = function(input: buffer, key: number)
+	dpb("NetShrink.Encrypt")
 	local len = bule(input)
 	local rand = Random.new(key+len)
 	for i = 1, len do
 		buwu8(input,i-1,b3bx(buru8(input,i-1),rand:NextInteger(0,255)))
 	end
+	dpe()
 	return input
 end
 
@@ -102,15 +120,19 @@ module.Decode = function(input: buffer, asTable, key)
 	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NShd' header but got '"..st.."'")
 	local offset = 5
 	
+	dpb("NetShrink.Decode")
 	local compressMode = buru8(input,4)
 	if compressMode > 0 then
+		local tgt = compressModeTargets[compressMode]
+		dpb("Decompress "..tgt)
 		local len,steps = Decode.DecodeVarLength(input,5)
 		local data = burs(input,5+steps,len)
-		local dec = Comp[compressModeTargets[compressMode]].Decompress(data)
+		local dec = Comp[tgt].Decompress(data)
 		len = #dec
 		input = bucr(len)
 		buws(input,0,dec,len)
 		offset = 0
+		dpe()
 	end
 	
 	local dataTypesSize,read = Decode.DecodeVarLength(input,offset)
@@ -141,6 +163,7 @@ module.Decode = function(input: buffer, asTable, key)
 	local i = 1
 	local decodeRecursive
 	decodeRecursive = function(insert)
+		dpb("decodeRecursive")
 		local startLayer = layer
 		while i <= #dataTypes do
 			local ty = dataTypes[i]
@@ -162,6 +185,7 @@ module.Decode = function(input: buffer, asTable, key)
 				i += 1
 				if startLayer >= layer and not insert then
 					layer = startLayer
+					dpe()
 					return ret
 				else
 					ti(n, ret)
@@ -190,6 +214,7 @@ module.Decode = function(input: buffer, asTable, key)
 					end
 				end
 				if not insert then
+					dpe()
 					return ret
 				else
 					cur[pos] = ret
@@ -202,14 +227,17 @@ module.Decode = function(input: buffer, asTable, key)
 				offset = r
 				if startLayer >= layer and not insert then
 					layer = startLayer
+					dpe()
 					return ret
 				else
 					if ty == 16 or ret ~= nil then cur[pos] = ret pos+=1 end
 				end
 			end
 		end
+		dpe()
 	end
 	decodeRecursive(true)
+	dpe()
 	if asTable then
 		return returns
 	else
@@ -222,6 +250,7 @@ local EncodeList
 local max = 2^DataTypeBits-1
 
 local function RecursiveEncode(inp: {}, output, types, dictionary)
+	dpb("RecursiveEncode")
 	local amt = #inp
 	local totals = 0
 	if dictionary then
@@ -234,10 +263,12 @@ local function RecursiveEncode(inp: {}, output, types, dictionary)
 		totals += 1
 	end
 	totals += EncodeList(inp, output, types)
+	dpe()
 	return totals
 end
 
 EncodeList = function(inp: {}, output, types)
+	dpb("EncodeList")
 	local totals = 0
 	for _,v in inp do
 		local t = typeof(v)
@@ -255,6 +286,7 @@ EncodeList = function(inp: {}, output, types)
 			totals += 1
 		end
 	end
+	dpe()
 	return totals
 end
 
@@ -269,6 +301,7 @@ end
 
 -- Encodes NetShrink data types into a buffer and returns said buffer
 module.EncodeManual = function(...)
+	dpb("NetShrink.EncodeManual")
 	local dataTypes = {}
 	local encodedData = {}
 	local dataTypesSize = RecursiveEncode({...},encodedData,dataTypes)
@@ -323,6 +356,7 @@ module.EncodeManual = function(...)
 			buwu8(finalBuffer2,4,cm)
 			buco(finalBuffer2,5,lenAsBytes,0,lenbytecount)
 			buws(finalBuffer2,5+lenbytecount,compString,complen)
+			dpe()
 			return finalBuffer2
 		end
 	end
@@ -333,6 +367,7 @@ module.EncodeManual = function(...)
 	buwu8(finalBuffer2,4,0)
 	buco(finalBuffer2,5,finalBuffer,0,lenBuffer)
 	
+	dpe()
 	return finalBuffer2
 end
 
@@ -740,8 +775,10 @@ Should help with cases where you might exceed a register limit when unpacking.
 Automatically converts variables in the table to NetShrink data types then encodes it to a buffer.
 ]]
 module.EncodeT = function(t: {})
+	dpb("NetShrink.EncodeT")
 	local dataTypes = {}
 	local n = t["n"] or #t
+	dpb("Auto-convert variables")
 	for i = 1, n do
 		local v = t[i] -- fixes missing nil entries
 		local t = typeof(v)
@@ -755,7 +792,12 @@ module.EncodeT = function(t: {})
 			ti(dataTypes, result)
 		end
 	end
-	return module.EncodeManual(unpack(dataTypes))
+	dpe()
+	dpb("Encode to buffer")
+	local ret = module.EncodeManual(unpack(dataTypes))
+	dpe()
+	dpe()
+	return ret
 end
 
 -- Automatically convert variables to NetShrink data types and encode it to a buffer
