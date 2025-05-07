@@ -119,7 +119,7 @@ module.Decode = function(input: buffer, asTable, key)
 	local st = burs(input,0,4)
 	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NShd' header but got '"..st.."'")
 	local offset = 5
-	
+
 	dpb("NetShrink.Decode")
 	local compressMode = buru8(input,4)
 	if compressMode > 0 then
@@ -134,7 +134,7 @@ module.Decode = function(input: buffer, asTable, key)
 		offset = 0
 		dpe()
 	end
-	
+
 	local dataTypesSize,read = Decode.DecodeVarLength(input,offset)
 	offset += read
 	local dataTypes = {}
@@ -177,7 +177,7 @@ module.Decode = function(input: buffer, asTable, key)
 				i += 1
 			elseif ty == 14 then
 				layer -= 1
-				pos = positions[layer]+1 -- +1 otherwise the recently created table/dictionary is overwritten
+				pos = positions[layer]
 				local ret = cur
 				local n = layers[layer]
 				tr(layers, layer + 1)
@@ -189,6 +189,7 @@ module.Decode = function(input: buffer, asTable, key)
 					return ret
 				else
 					ti(n, ret)
+					pos += 1
 				end
 			elseif ty == 15 then
 				local keys = {}
@@ -338,7 +339,7 @@ module.EncodeManual = function(...)
 		buco(finalBuffer, finalOffset, v, 0, s)
 		finalOffset+=s
 	end
-	
+
 	local cfg = module.Config
 	local cm = cfg.CompressMode
 	if cm > 0 then
@@ -359,13 +360,13 @@ module.EncodeManual = function(...)
 			return finalBuffer2
 		end
 	end
-	
+
 	local lenBuffer = bule(finalBuffer)
 	local finalBuffer2 = bucr(lenBuffer+5)
 	buws(finalBuffer2,0,"NShd",4)
 	buwu8(finalBuffer2,4,0)
 	buco(finalBuffer2,5,finalBuffer,0,lenBuffer)
-	
+
 	dpe()
 	return finalBuffer2
 end
@@ -386,7 +387,7 @@ module.String = function(input: string, compressMode: number, compressLevel: num
 	if compressLevel < 0 or compressLevel > 9 then return error("[NetShrink] Compression level not within range 0-9") end
 	if compressMode < 0 or compressMode > 2 then return error("[NetShrink] Compression mode not within range 0-9") end
 	local compressed = compressMode > 0 and compressLevel > 0
-	
+
 	if compressed then
 		local new = Comp[compressModeTargets[compressMode]].Compress(input, {
 			level = compressLevel,
@@ -401,7 +402,7 @@ module.String = function(input: string, compressMode: number, compressLevel: num
 			compressed = false
 		end
 	end
-	
+
 	return {
 		DataType = 0,
 		CompressMode = (if compressed then compressMode else 0),
