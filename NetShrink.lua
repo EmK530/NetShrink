@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.4.1
+NetShrink v1.4.2
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -305,11 +305,10 @@ module.EncodeManual = function(...)
 	local dataTypes = {}
 	local encodedData = {}
 	local dataTypesSize = RecursiveEncode({...},encodedData,dataTypes)
-	local dataTypesBuffer = bucr(1 + mace(dataTypesSize * DataTypeBits / 8))
-	--buws(dataTypesBuffer,0,"NShd")
 	local varlen = Encode.EncodeVarLength(dataTypesSize)
 	local vls = bule(varlen)
 	local offset = vls
+	local dataTypesBuffer = bucr(vls + mace(dataTypesSize * DataTypeBits / 8))
 	buco(dataTypesBuffer,0,varlen,0,vls)
 	local bitBuffer = 0
 	local bitsUsed = 0
