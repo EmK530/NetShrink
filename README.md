@@ -238,7 +238,7 @@ Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))` or `NetShrink.Color3b(B
 Stores a ColorSequence with two options, "float" for encoding all decimal numbers as single-precision and "byte" for using 3-byte colors.<br>
 Sizes: `3 bytes` + `7/11/16/32 bytes`, size varies with input settings.<br>
 Arguments: `input: ColorSequence`, `float: boolean`, `byte: boolean`<br>
-Example: `NetShrink.Color3b(Color3.fromRGB(255,127,64))` or `NetShrink.Color3b(BrickColor.new("Bright red"))`
+Example: `NetShrink.ColorSequence(ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(255,0,0)),ColorSequenceKeypoint.new(1,Color3.fromRGB(0,0,255))}), true, true)`
 <hr>
 
 ### Table
