@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.4.3
+NetShrink v1.4.4
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -302,10 +302,12 @@ EncodeList = function(inp: {}, output, types)
 end
 
 local function IsDictionary(t: {})
+	local indexId = 1
 	for i, _ in t do
-		if typeof(i) ~= "number" or i % 1 ~= 0 then
+		if typeof(i) ~= "number" or i ~= indexId or i % 1 ~= 0 then
 			return true
 		end
+		indexId += 1
 	end
 	return false
 end
