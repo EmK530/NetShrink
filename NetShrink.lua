@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.4.2
+NetShrink v1.4.3
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -161,17 +161,27 @@ module.Decode = function(input: buffer, asTable, key)
 	local positions = {}
 	local layer = 1
 	local i = 1
+	local dataTypeCount = #dataTypes
 	local decodeRecursive
 	decodeRecursive = function(insert)
 		dpb("decodeRecursive")
 		local startLayer = layer
-		while i <= #dataTypes do
+		while i <= dataTypeCount do
 			local ty = dataTypes[i]
 			if ty == 13 then
 				positions[layer] = pos
 				pos = 1
 				layer += 1
-				local new = {}
+				local totalItems = 0
+				for ti = i+1, dataTypeCount do
+					local val = dataTypes[ti]
+					if val ~= 14 then
+						totalItems += 1
+					else
+						break
+					end
+				end
+				local new = table.create(totalItems,0)
 				ti(layers, new)
 				cur = new
 				i += 1
