@@ -132,6 +132,7 @@ Below is a list of all supported data types and their respective functions and d
 - [Table](https://github.com/EmK530/NetShrink#table)
 - [Dictionary](https://github.com/EmK530/NetShrink#dictionary)
 - [Nil](https://github.com/EmK530/NetShrink#nil)
+- [EnumType](https://github.com/EmK530/NetShrink#EnumType)
 <hr>
 
 ### String
@@ -258,4 +259,9 @@ Example: `NetShrink.Dictionary({[NetShrink.String("testKey",0,0)] = NetShrink.UI
 ### Nil
 Stores a nil value, that's about it.<br>
 Example: `NetShrink.Nil()`
+<hr>
+
+### EnumType
+Stores an EnumType as one 1-byte value and one 2-byte value.<br>
+Example: `Netshrink.EnumType(Enum.EasingDirection.Out)`
 <hr>
