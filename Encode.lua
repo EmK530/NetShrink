@@ -264,6 +264,12 @@ functions = {
 		buwu16(buf,4,v.Data[3]+32768)
 		return buf
 	end,
+	function(v) -- EnumItem
+		local buf = bucr(3)
+		buwu8(buf, 0, v.Data[1]) -- value
+		buwu16(buf, 1, v.Data[2]) -- enum idx
+		return buf
+	end,
 }
 
 module.Convert = function(v)
