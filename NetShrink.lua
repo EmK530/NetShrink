@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.4.4
+NetShrink v1.5.0
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -684,6 +684,25 @@ module.ColorSequence = function(input: ColorSequence, float: boolean, byte: bool
 	return { DataType = 17, comp1 = float, comp2 = byte, Value = input }
 end
 
+local enumMapReverse: {[Enum]: number} = {} -- enum -> number
+for i, v in Enum:GetEnums() do
+	enumMapReverse[v] = i
+end
+
+--[[
+Create a Netshrink data type for an EnumItem
+Size: 3 bytes
+]]
+module.EnumItem = function(input: EnumItem)
+	local enumIdx: number = enumMapReverse[input.EnumType] -- uint16
+	local value: number = input.Value -- byte
+	
+	return { 
+		DataType = 20, 
+		Data = {value, enumIdx}
+	}
+end
+
 local function Boolean5Compatible(v: {})
 	local len = #v
 	if len <= 1 or len > 5 then return false end
@@ -778,7 +797,10 @@ VtoDT = {
 	end,
 	["Vector3int16"] = function(v: Vector3int16)
 		return module.Vector3int16(v)
-	end
+	end,
+	["EnumItem"] = function(v: EnumItem)
+		return module.EnumItem(v)
+	end,
 }
 
 --[[
