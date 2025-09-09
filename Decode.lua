@@ -26,6 +26,11 @@ local compressModeTargets = {
 	"Zlib"
 }
 
+local enumMap: {[Enum]: number} = {} --> number -> enum
+for i, v in Enum:GetEnums() do
+	enumMap[i] = v
+end
+
 module.DecodeVarLength = function(input: buffer, offset: number)
 	if not offset then offset = 0 end
 	local data,shift = 0,1
@@ -244,6 +249,16 @@ local functions = {
 		local Y = buru16(input, offset) offset += 2
 		local Z = buru16(input, offset) offset += 2
 		return Vector3int16.new(X-32768,Y-32768,Z-32768),offset
+	end,
+	
+	function(input: buffer, offset: number) -- EnumItem
+		local value = buru8(input, offset) 
+		offset += 1
+		
+		local enumIdx = buru16(input, offset)
+		offset += 2
+		
+		return enumMap[enumIdx]:FromValue(value), offset
 	end,
 }
 
