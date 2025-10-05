@@ -12,6 +12,20 @@ Developed by EmK530
 local isStudio = game:GetService("RunService"):IsStudio()
 local debugMode = false and isStudio -- change this if you want, enables compression fail reports for strings
 
+local function CheckForModules(names)
+	for _,name in pairs(names) do
+		local Check = script:FindFirstChild(name)
+		if not Check then
+			return error("[NetShrink] Could not locate child module '"..name.."'")
+		end
+		if Check.ClassName ~= "ModuleScript" then
+			return error("[NetShrink] Child instance '"..name.."' is not a ModuleScript")
+		end
+	end
+end
+
+CheckForModules({"Compression","Encode","Decode"})
+
 local Comp = require(script.Compression)
 local Encode = require(script.Encode)
 local Decode = require(script.Decode)
@@ -845,3 +859,4 @@ module.Encode = function(...)
 end
 
 return module
+
