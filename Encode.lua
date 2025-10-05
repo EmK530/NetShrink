@@ -270,6 +270,15 @@ functions = {
 		buwu16(buf, 1, v.Data[2]) -- enum idx
 		return buf
 	end,
+	
+	function(v) -- UDim2
+		local dat = v.Data
+		local buf = bucr(#dat*4)
+		for i,d in pairs(dat) do
+			buwf32(buf,(i-1)*4,d)
+		end
+		return buf
+	end,
 }
 
 module.Convert = function(v)
@@ -277,3 +286,5 @@ module.Convert = function(v)
 end
 
 return module
+
+

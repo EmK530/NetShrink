@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.0
+NetShrink v1.5.1
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -703,6 +703,17 @@ module.EnumItem = function(input: EnumItem)
 	}
 end
 
+--[[
+Create a Netshrink data type for an UDim2
+Size: 16 bytes as float, 32 bytes as double.
+]]
+module.UDim2 = function(input: UDim2)
+	return {
+		DataType = 21,
+		Data = {input.X.Scale, input.X.Offset, input.Y.Scale, input.Y.Offset}
+	}
+end
+
 local function Boolean5Compatible(v: {})
 	local len = #v
 	if len <= 1 or len > 5 then return false end
@@ -798,8 +809,13 @@ VtoDT = {
 	["Vector3int16"] = function(v: Vector3int16)
 		return module.Vector3int16(v)
 	end,
+				
 	["EnumItem"] = function(v: EnumItem)
 		return module.EnumItem(v)
+	end,
+				
+	["UDim2"] = function(v: UDim2)
+		return module.UDim2(v)
 	end,
 }
 
@@ -840,3 +856,5 @@ module.Encode = function(...)
 end
 
 return module
+
+
