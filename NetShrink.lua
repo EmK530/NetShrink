@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.0
+NetShrink v1.5.1
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -11,20 +11,6 @@ Developed by EmK530
 
 local isStudio = game:GetService("RunService"):IsStudio()
 local debugMode = false and isStudio -- change this if you want, enables compression fail reports for strings
-
-local function CheckForModules(names)
-	for _,name in pairs(names) do
-		local Check = script:FindFirstChild(name)
-		if not Check then
-			return error("[NetShrink] Could not locate child module '"..name.."'")
-		end
-		if Check.ClassName ~= "ModuleScript" then
-			return error("[NetShrink] Child instance '"..name.."' is not a ModuleScript")
-		end
-	end
-end
-
-CheckForModules({"Compression","Encode","Decode"})
 
 local Comp = require(script.Compression)
 local Encode = require(script.Encode)
@@ -703,6 +689,20 @@ module.EnumItem = function(input: EnumItem)
 	}
 end
 
+--[[
+Create a Netshrink data type for an UDim2
+Size: 16 bytes as float, 32 bytes as double.
+]]
+module.UDim2 = function(input: UDim2, float: boolean)
+	float = float or false
+	
+	return {
+		DataType = 21,
+		comp = float,
+		Data = {input.X.Scale, input.X.Offset, input.Y.Scale, input.Y.Offset}
+	}
+end
+
 local function Boolean5Compatible(v: {})
 	local len = #v
 	if len <= 1 or len > 5 then return false end
@@ -798,8 +798,13 @@ VtoDT = {
 	["Vector3int16"] = function(v: Vector3int16)
 		return module.Vector3int16(v)
 	end,
+				
 	["EnumItem"] = function(v: EnumItem)
 		return module.EnumItem(v)
+	end,
+				
+	["UDim2"] = function(v: UDim2)
+		return module.UDim2(v, module.Config.AutoConversion.Preferf32)
 	end,
 }
 
