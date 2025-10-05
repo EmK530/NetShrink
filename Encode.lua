@@ -270,6 +270,10 @@ functions = {
 		buwu16(buf, 1, v.Data[2]) -- enum idx
 		return buf
 	end,
+	
+	function(v) -- UDim2
+		return OutlineMoment(v)
+	end,
 }
 
 module.Convert = function(v)
