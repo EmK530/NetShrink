@@ -263,23 +263,12 @@ local functions = {
 	end,
 	
 	function(input: buffer, offset: number) -- UDim2
-		local comp = buru8(input, offset)
-		local func,mult
-		if comp == 1 then
-			func = burf32
-			mult = 1
-		else
-			func = burf64
-			mult = 2
-		end
-		offset+=1
-		
-		local Xscale = func(input, offset)
-		local Xoffset = func(input, offset + 4 * mult)
-		local Yscale = func(input, offset + 8 * mult)
-		local Yoffset = func(input, offset + 12 * mult)
+		local Xscale = burf32(input, offset)
+		local Xoffset = burf32(input, offset + 4)
+		local Yscale = burf32(input, offset + 8)
+		local Yoffset = burf32(input, offset + 12)
 
-		offset += 16 * mult
+		offset += 16
 		return UD2new(Xscale, Xoffset, Yscale, Yoffset), offset
 	end,
 }
@@ -289,3 +278,4 @@ module.ReadType = function(input: buffer, offset: number, type: number)
 end
 
 return module
+
