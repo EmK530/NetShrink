@@ -273,7 +273,7 @@ functions = {
 	
 	function(v) -- UDim2
 		local dat = v.Data
-		local buf = bucr(#dat*4+1)
+		local buf = bucr(#dat*4)
 		for i,d in pairs(dat) do
 			buwf32(buf,(i-1)*4,d)
 		end
@@ -286,4 +286,5 @@ module.Convert = function(v)
 end
 
 return module
+
 
