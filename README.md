@@ -133,6 +133,7 @@ Below is a list of all supported data types and their respective functions and d
 - [Dictionary](https://github.com/EmK530/NetShrink#dictionary)
 - [Nil](https://github.com/EmK530/NetShrink#nil)
 - [EnumItem](https://github.com/EmK530/NetShrink#EnumItem)
+- [UDim2](https://github.com/EmK530/NetShrink#UDim2)
 <hr>
 
 ### String
@@ -265,4 +266,10 @@ Example: `NetShrink.Nil()`
 Stores an EnumItem as one 1-byte value and one 2-byte value.<br>
 Arguments: `input: EnumItem`<br/>
 Example: `Netshrink.EnumItem(Enum.EasingDirection.Out)`
+
+### UDim2
+Stores an UDim2 with an option to use single-precision to reduce size by half.<br>
+Sizes: `Single-precision: 16 bytes`, `Double-precision: 32 bytes.`<br>
+Arguments: `input: UDim2`, `float: boolean`, setting `float` to true will encode the UDim2 as single-precision, sacrificing precision for size.<br>
+Example: `NetShrink.UDim2(UDim2.new(120, 346, 81, 299), true)`, this encodes as single-precision.
 <hr>
