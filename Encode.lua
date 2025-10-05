@@ -272,7 +272,12 @@ functions = {
 	end,
 	
 	function(v) -- UDim2
-		return OutlineMoment(v)
+		local dat = v.Data
+		local buf = bucr(#dat*4+1)
+		for i,d in pairs(dat) do
+			buwf32(buf,(i-1)*4,d)
+		end
+		return buf
 	end,
 }
 
@@ -281,3 +286,4 @@ module.Convert = function(v)
 end
 
 return module
+
