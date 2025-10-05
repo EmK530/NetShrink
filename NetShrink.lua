@@ -707,12 +707,9 @@ end
 Create a Netshrink data type for an UDim2
 Size: 16 bytes as float, 32 bytes as double.
 ]]
-module.UDim2 = function(input: UDim2, float: boolean)
-	float = float or false
-	
+module.UDim2 = function(input: UDim2)
 	return {
 		DataType = 21,
-		comp = float,
 		Data = {input.X.Scale, input.X.Offset, input.Y.Scale, input.Y.Offset}
 	}
 end
@@ -818,7 +815,7 @@ VtoDT = {
 	end,
 				
 	["UDim2"] = function(v: UDim2)
-		return module.UDim2(v, module.Config.AutoConversion.Preferf32)
+		return module.UDim2(v)
 	end,
 }
 
@@ -859,4 +856,5 @@ module.Encode = function(...)
 end
 
 return module
+
 
