@@ -18,6 +18,7 @@ local C3n = Color3.new
 local C3r = Color3.fromRGB
 local CFn = CFrame.new
 local CFe = CFrame.fromEulerAnglesXYZ
+local UD2new = UDim2.new
 
 local Comp = require(script.Parent.Compression)
 
@@ -259,6 +260,27 @@ local functions = {
 		offset += 2
 		
 		return enumMap[enumIdx]:FromValue(value), offset
+	end,
+	
+	function(input: buffer, offset: number) -- UDim2
+		local comp = buru8(input, offset)
+		local func,mult
+		if comp == 1 then
+			func = burf32
+			mult = 1
+		else
+			func = burf64
+			mult = 2
+		end
+		offset+=1
+		
+		local Xscale = func(input, offset)
+		local Xoffset = func(input, offset + 4 * mult)
+		local Yscale = func(input, offset + 8 * mult)
+		local Yoffset = func(input, offset + 12 * mult)
+
+		offset += 16 * mult
+		return UD2new(Xscale, Xoffset, Yscale, Yoffset), offset
 	end,
 }
 
