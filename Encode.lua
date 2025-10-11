@@ -8,6 +8,7 @@ local b3bo = bit32.bor
 local bucr = buffer.create
 local buwu8 = buffer.writeu8
 local buwu16 = buffer.writeu16
+local buwi16 = buffer.writei16
 local buwu32 = buffer.writeu32
 local buwf32 = buffer.writef32
 local buwf64 = buffer.writef64
@@ -27,6 +28,10 @@ local tbfFunctions = {
 
 local function ToBuffer(input)
 	return tbfFunctions[input.DataType+1](input)
+end
+
+local function toI16(num: number)
+	return math.floor(num * 32767 + 0.5)
 end
 
 local function BufByte(input)
@@ -140,9 +145,27 @@ functions = {
 	function(v) -- Vector3
 		return OutlineMoment(v)
 	end,
+	
 	function(v) -- CFrame
-		return OutlineMoment(v)
+		--> roblox always stores cframes as 3 f32s for position and 9 i16s for rotation matrices
+		--> since the rotation vectors are always perpendicular we can only save two
+		--> and reconstruct the other when decoding from cross product
+
+		local x, y, z, r00, r01, r02, r10, r11, r12, _, _, _ = unpack(v.Data)
+		
+		local buf = bucr(24)
+		--> position
+		buwf32(buf, 0, x); buwf32(buf, 4, y); buwf32(buf, 8, z)
+		
+		--> rotation vector 1
+		buwi16(buf, 12, toI16(r00)); buwi16(buf, 14, toI16(r01)); buwi16(buf, 16, toI16(r02))
+		
+		--> rotation vector 2
+		buwi16(buf, 18, toI16(r10)); buwi16(buf, 20, toI16(r11)); buwi16(buf, 22, toI16(r12))
+		
+		return buf
 	end,
+	
 	function(v) -- CFrameEuler
 		return OutlineMoment(v)
 	end,
@@ -272,12 +295,7 @@ functions = {
 	end,
 	
 	function(v) -- UDim2
-		local dat = v.Data
-		local buf = bucr(#dat*4)
-		for i,d in pairs(dat) do
-			buwf32(buf,(i-1)*4,d)
-		end
-		return buf
+		return OutlineMoment(v)
 	end,
 }
 
@@ -286,5 +304,3 @@ module.Convert = function(v)
 end
 
 return module
-
-
