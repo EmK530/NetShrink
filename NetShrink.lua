@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.1
+NetShrink v1.5.2
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -854,6 +854,7 @@ module.Encode = function(...)
 end
 
 return module
+
 
 
 
