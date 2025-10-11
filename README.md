@@ -79,7 +79,8 @@ Compresses every Color3 channel as a UInt8 instead of a floating point number, r
 **Default value: true**
 
 #### UseEulerCFrames
-Compresses CFrames with only XYZ coordinates and euler angles, cutting data size in half.<br>
+Compresses CFrames with only XYZ coordinates and euler angles.<br>
+<b>Do not enable, compressed size is worse on v1.5.2, improvements coming soon.</b><br>
 **Default value: false**
 <hr>
 
@@ -208,10 +209,9 @@ Example: `NetShrink.Vector3int16(Vector3int16.new(32767,-32768,16384))`
 <hr>
 
 ### CFrame
-Stores a CFrame with an option to use single-precision to reduce size by half.<br>
-Sizes: `Single-precision: 48 bytes`, `Double-precision: 96 bytes.`<br>
-Arguments: `input: CFrame`, `float: boolean`, setting `float` to true will encode the CFrame as single-precision, sacrificing precision for size.<br>
-Example: `NetShrink.CFrame(workspace.SpawnLocation.CFrame,true)`, this encodes as single-precision.
+Stores a CFrame into 24 bytes.<br>
+Arguments: `input: CFrame`<br>
+Example: `NetShrink.CFrame(workspace.SpawnLocation.CFrame)`
 <hr>
 
 ### CFrameEuler

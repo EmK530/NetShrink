@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.1
+NetShrink v1.5.2
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -559,13 +559,11 @@ end
 
 --[[
 Create a NetShrink data type for a CFrame.
-Size: 48 bytes as float, 96 bytes as double.
+Size: 24 bytes
 ]]
-module.CFrame = function(input: CFrame, float: boolean)
-	if not float then float = false end
+module.CFrame = function(input: CFrame)
 	return {
 		DataType = 9,
-		comp = float,
 		Data = {input:GetComponents()}
 	}
 end
@@ -856,5 +854,7 @@ module.Encode = function(...)
 end
 
 return module
+
+
 
 
