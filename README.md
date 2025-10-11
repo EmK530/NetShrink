@@ -79,7 +79,8 @@ Compresses every Color3 channel as a UInt8 instead of a floating point number, r
 **Default value: true**
 
 #### UseEulerCFrames
-Compresses CFrames with only XYZ coordinates and euler angles, cutting data size in half.<br>
+Compresses CFrames with only XYZ coordinates and euler angles.<br>
+<b>Do not enable, compressed size is worse on v1.5.2, improvements coming soon.</b><br>
 **Default value: false**
 <hr>
 
