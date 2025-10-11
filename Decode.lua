@@ -6,6 +6,7 @@ local b3ls = bit32.lshift
 local b3rs = bit32.rshift
 local buru8 = buffer.readu8
 local buru16 = buffer.readu16
+local buri16 = buffer.readi16
 local buru32 = buffer.readu32
 local burf32 = buffer.readf32
 local burf64 = buffer.readf64
@@ -16,7 +17,7 @@ local V3n = Vector3.new
 local BCn = BrickColor.new
 local C3n = Color3.new
 local C3r = Color3.fromRGB
-local CFn = CFrame.new
+local CFnew = CFrame.new
 local CFe = CFrame.fromEulerAnglesXYZ
 local UD2new = UDim2.new
 
@@ -132,24 +133,31 @@ local functions = {
 		offset+=12*mult
 		return V3n(X,Y,Z),offset
 	end,
+	
 	function(input: buffer, offset: number) -- CFrame
-		local comp = buru8(input, offset)
-		local func,mult
-		if comp == 1 then
-			func = burf32
-			mult = 1
-		else
-			func = burf64
-			mult = 2
-		end
-		offset+=1
-		local values = {}
-		for i = 1, 12 do
-			ti(values,func(input, offset+((i-1)*4*mult)))
-		end
-		offset+=48*mult
-		return CFn(unpack(values)),offset
+		--> roblox always stores cframes as 3 f32s for position and 9 i16s for rotation matrices
+		--> since the rotation vectors are always perpendicular we can only save two
+		--> and reconstruct the other when decoding from cross product
+		
+		local x, y, z = burf32(input, offset), burf32(input, offset + 4), burf32(input, offset + 8)
+		
+		local r00, r01, r02 = 
+			buri16(input, offset + 12) / 32767, 
+			buri16(input, offset + 14) / 32767, 
+			buri16(input, offset + 16) / 32767
+		
+		local r10, r11, r12 = 
+			buri16(input, offset + 18) / 32767,
+			buri16(input, offset + 20) / 32767, 
+			buri16(input, offset + 22) / 32767
+			
+		offset += 24
+		
+		local r2 = Vector3.new(r00, r01, r02):Cross(Vector3.new(r10, r11, r12))
+		
+		return CFnew(x, y, z, r00, r01, r02, r10, r11, r12, r2.X, r2.Y, r2.Z), offset
 	end,
+	
 	function(input: buffer, offset: number) -- CFrameEuler
 		local comp = buru8(input, offset)
 		local func,mult
@@ -263,12 +271,23 @@ local functions = {
 	end,
 	
 	function(input: buffer, offset: number) -- UDim2
-		local Xscale = burf32(input, offset)
-		local Xoffset = burf32(input, offset + 4)
-		local Yscale = burf32(input, offset + 8)
-		local Yoffset = burf32(input, offset + 12)
+		local comp = buru8(input, offset)
+		local func,mult
+		if comp == 1 then
+			func = burf32
+			mult = 1
+		else
+			func = burf64
+			mult = 2
+		end
+		offset+=1
+		
+		local Xscale = func(input, offset)
+		local Xoffset = func(input, offset + 4 * mult)
+		local Yscale = func(input, offset + 8 * mult)
+		local Yoffset = func(input, offset + 12 * mult)
 
-		offset += 16
+		offset += 16 * mult
 		return UD2new(Xscale, Xoffset, Yscale, Yoffset), offset
 	end,
 }
@@ -278,4 +297,3 @@ module.ReadType = function(input: buffer, offset: number, type: number)
 end
 
 return module
-
