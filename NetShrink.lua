@@ -694,7 +694,7 @@ Size: 3 bytes
 module.EnumItem = function(input: EnumItem)
 	local enumIdx: number = enumMapReverse[input.EnumType] -- uint16
 	local value: number = input.Value -- byte
-	
+
 	return { 
 		DataType = 20, 
 		Data = {value, enumIdx}
@@ -807,11 +807,11 @@ VtoDT = {
 	["Vector3int16"] = function(v: Vector3int16)
 		return module.Vector3int16(v)
 	end,
-				
+
 	["EnumItem"] = function(v: EnumItem)
 		return module.EnumItem(v)
 	end,
-				
+
 	["UDim2"] = function(v: UDim2)
 		return module.UDim2(v)
 	end,
@@ -825,7 +825,7 @@ Automatically converts variables in the table to NetShrink data types then encod
 module.EncodeT = function(t: {})
 	dpb("NetShrink.EncodeT")
 	local dataTypes = {}
-	local n = t["n"] or #t
+	local n = t["n"] or #(t :: {})
 	dpb("Auto-convert variables")
 	for i = 1, n do
 		local v = t[i] -- fixes missing nil entries
@@ -853,8 +853,5 @@ module.Encode = function(...)
 	return module.EncodeT(table.pack(...))
 end
 
+Decode.Init()
 return module
-
-
-
-
