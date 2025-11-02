@@ -29,8 +29,35 @@ local compressModeTargets = {
 }
 
 local enumMap: {[Enum]: number} = {} --> number -> enum
-for i, v in Enum:GetEnums() do
-	enumMap[i] = v
+
+module.Init = function()
+	if game:GetService("RunService"):IsServer() then
+		--> we also store a stringvalue for the client to use, because the client and server have different enums
+		local strMap: string = "" 
+		for i, v in Enum:GetEnums() do
+			strMap ..= `{i}-{v}/`
+			enumMap[i] = v
+		end
+		strMap = strMap:sub(1, #strMap - 1) -- remove last /
+
+		if script:FindFirstChild("EnumStringMap") then return end
+		local obj = Instance.new("StringValue")
+		obj.Value = strMap
+		obj.Name = "EnumStringMap"
+
+		obj.Parent = script
+		return
+	end
+	
+	local enumStrMap = script:WaitForChild("EnumStringMap", 5)
+	if not enumStrMap then error("[NetShrink]: Couldn't find EnumStringMap.") return end
+	
+	for _, str in enumStrMap.Value:split("/") do
+		local contents = str:split("-")
+		local isValid = pcall(function() assert(Enum[contents[2]]) end)
+
+		enumMap[tonumber(contents[1])] = (isValid and Enum[contents[2]] or "SERVER_ONLY_ENUM")
+	end
 end
 
 module.DecodeVarLength = function(input: buffer, offset: number)
