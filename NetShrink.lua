@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.3
+NetShrink v1.5.4
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -61,7 +61,8 @@ local min = math.min
 
 local compressModeTargets = {
 	"Deflate",
-	"Zlib"
+	"Zlib",
+	"Zstd"
 }
 
 -- Possible Storage: 2 ^ DataTypeBits
@@ -72,14 +73,14 @@ local DataTypeBits = 5
 module.Config = {
 	["AutoConversion"] = {
 		["Strings"] = {
-			["CompressMode"] = 3,
+			["CompressMode"] = 0,
 			["CompressLevel"] = 1
 		},
 		["Preferf32"] = false,
 		["Use3bColors"] = true,
 		["UseEulerCFrames"] = false
 	},
-	["CompressMode"] = 1,
+	["CompressMode"] = 3,
 	["CompressLevel"] = 1,
 	["DebugProfiling"] = false
 }
@@ -136,13 +137,16 @@ module.Decode = function(input: buffer, asTable, key)
 			local dataBuf = bucr(len)
 			buco(dataBuf, 0, input, 5+steps, len)
 			dec = EncodingService:DecompressBuffer(dataBuf, Enum.CompressionAlgorithm.Zstd)
+			len = bule(dec)
+			input = bucr(len)
+			buco(input,0,dec,0,len)
 		else
 			local data = burs(input,5+steps,len)
 			dec = Comp[tgt].Decompress(data)
+			len = #dec
+			input = bucr(len)
+			buws(input,0,dec,len)
 		end
-		len = #dec
-		input = bucr(len)
-		buws(input,0,dec,len)
 		offset = 0
 		dpe()
 	end
@@ -370,7 +374,7 @@ module.EncodeManual = function(...)
 				buws(finalBuffer2,0,"NShd",4)
 				buwu8(finalBuffer2,4,cm)
 				buco(finalBuffer2,5,lenAsBytes,0,lenbytecount)
-				buco(finalBuffer2,5+lenbytecount,compBuffer,complen)
+				buco(finalBuffer2,5+lenbytecount,compBuffer,0,complen)
 				dpe()
 				return finalBuffer2
 			end

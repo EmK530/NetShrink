@@ -105,7 +105,7 @@ end
 local functions
 functions = {
 	function(v) -- String
-		local varlen = module.EncodeVarLength(#v.Data)
+		local varlen = module.EncodeVarLength(v.CompressMode==3 and buffer.len(v.Data) or #v.Data)
 		local buf = MergeBuffers(varlen,BufByte(v.CompressMode),(v.CompressMode==3 and v.Data or ToBuffer(v)))
 		return buf
 	end,

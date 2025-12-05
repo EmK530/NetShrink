@@ -108,7 +108,7 @@ local functions = {
 			if mode == 3 then
 				local strBuf = bucr(len)
 				buco(strBuf, 0, input, offset, len)
-				str = EncodingService:DecompressBuffer(strBuf, Enum.CompressionAlgorithm.Zstd)
+				str = buffer.tostring(EncodingService:DecompressBuffer(strBuf, Enum.CompressionAlgorithm.Zstd))
 			else
 				str = burs(input, offset, len)
 				str = Comp[compressModeTargets[mode]].Decompress(str)
