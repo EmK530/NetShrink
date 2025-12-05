@@ -88,7 +88,8 @@ There are also settings available for how the entire buffer gets compressed, acc
 
 #### CompressMode
 The compression method that will be used on the final buffer output to reduce size. Not recommended for performance.<br>
-**Default value: 1 (DEFLATE)**
+**Default value: 3 (EncodingService Zstd)**<br>
+Supported values: 0: `None`, 1: `DEFLATE`, 2: `Zlib`, 3: `EncodingService Zstd` (EncodingService should be faster as it is native)
 
 #### CompressLevel
 The compression level that will be used by the compression method, ignored if CompressMode is 0.<br>
@@ -140,7 +141,7 @@ Below is a list of all supported data types and their respective functions and d
 ### String
 Stores a string with optional compression methods.<br>
 Arguments: `input: string`, `compressMode: number`, `compressLevel: number`<br>
-`compressMode`: Controls what compression method to use, (0: `None`, 1: `DEFLATE`, 2: `Zlib`)<br>
+`compressMode`: Controls what compression method to use, (0: `None`, 1: `DEFLATE`, 2: `Zlib`, 3: `EncodingService Zstd`)<br>
 `compressLevel`: Controls the compression level, higher takes longer to process, range: 0-9<br>
 Example: `NetShrink.String("aaaaaaaaaaaaa",1,9)`
 <hr>
