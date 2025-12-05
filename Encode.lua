@@ -106,7 +106,7 @@ local functions
 functions = {
 	function(v) -- String
 		local varlen = module.EncodeVarLength(#v.Data)
-		local buf = MergeBuffers(varlen,BufByte(v.CompressMode),ToBuffer(v))
+		local buf = MergeBuffers(varlen,BufByte(v.CompressMode),(v.CompressMode==3 and v.Data or ToBuffer(v)))
 		return buf
 	end,
 	function(v) -- Boolean5
@@ -145,27 +145,27 @@ functions = {
 	function(v) -- Vector3
 		return OutlineMoment(v)
 	end,
-	
+
 	function(v) -- CFrame
 		--> roblox always stores cframes as 3 f32s for position and 9 i16s for rotation matrices
 		--> since the rotation vectors are always perpendicular we can only save two
 		--> and reconstruct the other when decoding from cross product
 
 		local x, y, z, r00, r01, r02, r10, r11, r12, _, _, _ = unpack(v.Data)
-		
+
 		local buf = bucr(24)
 		--> position
 		buwf32(buf, 0, x); buwf32(buf, 4, y); buwf32(buf, 8, z)
-		
+
 		--> rotation vector 1
 		buwi16(buf, 12, toI16(r00)); buwi16(buf, 14, toI16(r01)); buwi16(buf, 16, toI16(r02))
-		
+
 		--> rotation vector 2
 		buwi16(buf, 18, toI16(r10)); buwi16(buf, 20, toI16(r11)); buwi16(buf, 22, toI16(r12))
-		
+
 		return buf
 	end,
-	
+
 	function(v) -- CFrameEuler
 		return OutlineMoment(v)
 	end,
@@ -293,7 +293,7 @@ functions = {
 		buwu16(buf, 1, v.Data[2]) -- enum idx
 		return buf
 	end,
-	
+
 	function(v) -- UDim2
 		local dat = v.Data
 		local buf = bucr(#dat*4)

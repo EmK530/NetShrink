@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.2
+NetShrink v1.5.3
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -26,6 +26,7 @@ end
 
 CheckForModules({"Compression","Encode","Decode"})
 
+local EncodingService = game:GetService("EncodingService")
 local Comp = require(script.Compression)
 local Encode = require(script.Encode)
 local Decode = require(script.Decode)
@@ -71,7 +72,7 @@ local DataTypeBits = 5
 module.Config = {
 	["AutoConversion"] = {
 		["Strings"] = {
-			["CompressMode"] = 0,
+			["CompressMode"] = 3,
 			["CompressLevel"] = 1
 		},
 		["Preferf32"] = false,
@@ -110,11 +111,15 @@ module.Encrypt = function(input: buffer, key: number)
 	return input
 end
 
+local hasLoadedEnum = false
 -- Decodes a NetShrink encoded buffer into the original variables
 module.Decode = function(input: buffer, asTable, key)
 	if key ~= nil and typeof(key) == "number" then
 		-- Decrypt buffer with key
 		input = module.Encrypt(input, key)
+	end
+	if not hasLoadedEnum then
+		hasLoadedEnum = Decode.TryLoadEnumMap()
 	end
 	local st = burs(input,0,4)
 	assert(st == "NShd", "[NetShrink] Cannot decode invalid buffer, expected 'NShd' header but got '"..st.."'")
@@ -126,8 +131,15 @@ module.Decode = function(input: buffer, asTable, key)
 		local tgt = compressModeTargets[compressMode]
 		dpb("Decompress "..tgt)
 		local len,steps = Decode.DecodeVarLength(input,5)
-		local data = burs(input,5+steps,len)
-		local dec = Comp[tgt].Decompress(data)
+		local dec
+		if compressMode == 3 then
+			local dataBuf = bucr(len)
+			buco(dataBuf, 0, input, 5+steps, len)
+			dec = EncodingService:DecompressBuffer(dataBuf, Enum.CompressionAlgorithm.Zstd)
+		else
+			local data = burs(input,5+steps,len)
+			dec = Comp[tgt].Decompress(data)
+		end
 		len = #dec
 		input = bucr(len)
 		buws(input,0,dec,len)
@@ -172,16 +184,7 @@ module.Decode = function(input: buffer, asTable, key)
 				positions[layer] = pos
 				pos = 1
 				layer += 1
-				local totalItems = 0
-				for ti = i+1, dataTypeCount do
-					local val = dataTypes[ti]
-					if val ~= 14 then
-						totalItems += 1
-					else
-						break
-					end
-				end
-				local new = table.create(totalItems,0)
+				local new = {}
 				ti(layers, new)
 				cur = new
 				i += 1
@@ -356,20 +359,37 @@ module.EncodeManual = function(...)
 	local cm = cfg.CompressMode
 	if cm > 0 then
 		local cl = cfg.CompressLevel
-		local tgt = Comp[compressModeTargets[cm]]
-		local lenBuffer = bule(finalBuffer)
-		local compString = tgt.Compress(burs(finalBuffer,0,lenBuffer),{level=cl,strategy="fixed"})
-		local complen = #compString
-		if complen < lenBuffer then
-			local lenAsBytes = Encode.EncodeVarLength(complen)
-			local lenbytecount = bule(lenAsBytes)
-			local finalBuffer2 = bucr(complen+5+lenbytecount)
-			buws(finalBuffer2,0,"NShd",4)
-			buwu8(finalBuffer2,4,cm)
-			buco(finalBuffer2,5,lenAsBytes,0,lenbytecount)
-			buws(finalBuffer2,5+lenbytecount,compString,complen)
-			dpe()
-			return finalBuffer2
+		if cm == 3 then
+			local lenBuffer = bule(finalBuffer)
+			local compBuffer = EncodingService:CompressBuffer(finalBuffer,Enum.CompressionAlgorithm.Zstd,cl)
+			local complen = bule(compBuffer)
+			if complen < lenBuffer then
+				local lenAsBytes = Encode.EncodeVarLength(complen)
+				local lenbytecount = bule(lenAsBytes)
+				local finalBuffer2 = bucr(complen+5+lenbytecount)
+				buws(finalBuffer2,0,"NShd",4)
+				buwu8(finalBuffer2,4,cm)
+				buco(finalBuffer2,5,lenAsBytes,0,lenbytecount)
+				buco(finalBuffer2,5+lenbytecount,compBuffer,complen)
+				dpe()
+				return finalBuffer2
+			end
+		else
+			local tgt = Comp[compressModeTargets[cm]]
+			local lenBuffer = bule(finalBuffer)
+			local compString = tgt.Compress(burs(finalBuffer,0,lenBuffer),{level=cl,strategy="fixed"})
+			local complen = #compString
+			if complen < lenBuffer then
+				local lenAsBytes = Encode.EncodeVarLength(complen)
+				local lenbytecount = bule(lenAsBytes)
+				local finalBuffer2 = bucr(complen+5+lenbytecount)
+				buws(finalBuffer2,0,"NShd",4)
+				buwu8(finalBuffer2,4,cm)
+				buco(finalBuffer2,5,lenAsBytes,0,lenbytecount)
+				buws(finalBuffer2,5+lenbytecount,compString,complen)
+				dpe()
+				return finalBuffer2
+			end
 		end
 	end
 
@@ -397,15 +417,23 @@ module.String = function(input: string, compressMode: number, compressLevel: num
 	if not compressMode then compressMode = 0 end
 	if not compressLevel then compressLevel = 0 end
 	if compressLevel < 0 or compressLevel > 9 then return error("[NetShrink] Compression level not within range 0-9") end
-	if compressMode < 0 or compressMode > 2 then return error("[NetShrink] Compression mode not within range 0-9") end
+	if compressMode < 0 or compressMode > 3 then return error("[NetShrink] Compression mode not within range 0-3") end
 	local compressed = compressMode > 0 and compressLevel > 0
 
 	if compressed then
-		local new = Comp[compressModeTargets[compressMode]].Compress(input, {
-			level = compressLevel,
-			strategy = "fixed"
-		})
-		if #new < #input then
+		local new
+		local newSize
+		if compressMode == 3 then
+			new = EncodingService:CompressBuffer(buffer.fromstring(input), Enum.CompressionAlgorithm.Zstd, compressLevel)
+			newSize = bule(new)
+		else
+			new = Comp[compressModeTargets[compressMode]].Compress(input, {
+				level = compressLevel,
+				strategy = "fixed"
+			})
+			newSize = #new
+		end
+		if newSize < #input then
 			input = new
 		else
 			if debugMode then

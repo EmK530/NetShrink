@@ -11,6 +11,8 @@ local buru32 = buffer.readu32
 local burf32 = buffer.readf32
 local burf64 = buffer.readf64
 local burs = buffer.readstring
+local buco = buffer.copy
+local bucr = buffer.create
 
 local V2n = Vector2.new
 local V3n = Vector3.new
@@ -21,19 +23,44 @@ local CFnew = CFrame.new
 local CFe = CFrame.fromEulerAnglesXYZ
 local UD2new = UDim2.new
 
+local EncodingService = game:GetService("EncodingService")
 local Comp = require(script.Parent.Compression)
 
 local compressModeTargets = {
 	"Deflate",
-	"Zlib"
+	"Zlib",
+	"ZlibNative"
 }
 
-local enumMap: {[Enum]: number} = {} --> number -> enum
+--local enumMap: {[Enum]: number} = {} --> number -> enum
+local enumMap = nil
+local enumMapFallback = {}
+for i,v in Enum:GetEnums() do
+	enumMapFallback[i] = v
+end
+
+module.TryLoadEnumMap = function()
+	if enumMap == nil then
+		local enumStrMap = script:FindFirstChild("EnumStringMap")
+		if not enumStrMap then return false end
+
+		enumMap = {}
+		for _, str in enumStrMap.Value:split("/") do
+			local contents = str:split("-")
+			local isValid = pcall(function() assert(Enum[contents[2]]) end)
+
+			enumMap[tonumber(contents[1])] = (isValid and Enum[contents[2]] or "SERVER_ONLY_ENUM")
+		end
+	else
+		return true
+	end
+end
 
 module.Init = function()
 	if game:GetService("RunService"):IsServer() then
 		--> we also store a stringvalue for the client to use, because the client and server have different enums
 		local strMap: string = "" 
+		enumMap = {}
 		for i, v in Enum:GetEnums() do
 			strMap ..= `{i}-{v}/`
 			enumMap[i] = v
@@ -49,15 +76,7 @@ module.Init = function()
 		return
 	end
 	
-	local enumStrMap = script:WaitForChild("EnumStringMap", 5)
-	if not enumStrMap then error("[NetShrink]: Couldn't find EnumStringMap.") return end
-	
-	for _, str in enumStrMap.Value:split("/") do
-		local contents = str:split("-")
-		local isValid = pcall(function() assert(Enum[contents[2]]) end)
-
-		enumMap[tonumber(contents[1])] = (isValid and Enum[contents[2]] or "SERVER_ONLY_ENUM")
-	end
+	module.TryLoadEnumMap()
 end
 
 module.DecodeVarLength = function(input: buffer, offset: number)
@@ -83,11 +102,21 @@ local functions = {
 		offset+=amt
 		local mode = buru8(input, offset)
 		offset+=1
-		local str = burs(input, offset, len)
-		offset+=len
+		
+		local str
 		if mode > 0 then
-			str = Comp[compressModeTargets[mode]].Decompress(str)
+			if mode == 3 then
+				local strBuf = bucr(len)
+				buco(strBuf, 0, input, offset, len)
+				str = EncodingService:DecompressBuffer(strBuf, Enum.CompressionAlgorithm.Zstd)
+			else
+				str = burs(input, offset, len)
+				str = Comp[compressModeTargets[mode]].Decompress(str)
+			end
+		else
+			str = burs(input, offset, len)
 		end
+		offset+=len
 		return str,offset
 	end,
 	function(input: buffer, offset: number) -- Boolean5
@@ -160,31 +189,31 @@ local functions = {
 		offset+=12*mult
 		return V3n(X,Y,Z),offset
 	end,
-	
+
 	function(input: buffer, offset: number) -- CFrame
 		--> roblox always stores cframes as 3 f32s for position and 9 i16s for rotation matrices
 		--> since the rotation vectors are always perpendicular we can only save two
 		--> and reconstruct the other when decoding from cross product
-		
+
 		local x, y, z = burf32(input, offset), burf32(input, offset + 4), burf32(input, offset + 8)
-		
+
 		local r00, r01, r02 = 
 			buri16(input, offset + 12) / 32767, 
-			buri16(input, offset + 14) / 32767, 
-			buri16(input, offset + 16) / 32767
-		
+		buri16(input, offset + 14) / 32767, 
+		buri16(input, offset + 16) / 32767
+
 		local r10, r11, r12 = 
 			buri16(input, offset + 18) / 32767,
-			buri16(input, offset + 20) / 32767, 
-			buri16(input, offset + 22) / 32767
-			
+		buri16(input, offset + 20) / 32767, 
+		buri16(input, offset + 22) / 32767
+
 		offset += 24
-		
+
 		local r2 = Vector3.new(r00, r01, r02):Cross(Vector3.new(r10, r11, r12))
-		
+
 		return CFnew(x, y, z, r00, r01, r02, r10, r11, r12, r2.X, r2.Y, r2.Z), offset
 	end,
-	
+
 	function(input: buffer, offset: number) -- CFrameEuler
 		local comp = buru8(input, offset)
 		local func,mult
@@ -286,17 +315,17 @@ local functions = {
 		local Z = buru16(input, offset) offset += 2
 		return Vector3int16.new(X-32768,Y-32768,Z-32768),offset
 	end,
-	
+
 	function(input: buffer, offset: number) -- EnumItem
 		local value = buru8(input, offset) 
 		offset += 1
-		
+
 		local enumIdx = buru16(input, offset)
 		offset += 2
 		
-		return enumMap[enumIdx]:FromValue(value), offset
+		return (enumMap or enumMapFallback)[enumIdx]:FromValue(value), offset
 	end,
-	
+
 	function(input: buffer, offset: number) -- UDim2
 		local Xscale = burf32(input, offset)
 		local Xoffset = burf32(input, offset + 4)
