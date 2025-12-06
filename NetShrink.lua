@@ -178,6 +178,7 @@ module.Decode = function(input: buffer, asTable, key)
 	local layer = 1
 	local i = 1
 	local dataTypeCount = #dataTypes
+	local delayedNilWrites = {}
 	local decodeRecursive
 	decodeRecursive = function(insert)
 		dpb("decodeRecursive")
@@ -205,7 +206,7 @@ module.Decode = function(input: buffer, asTable, key)
 					dpe()
 					return ret
 				else
-					ti(n, ret)
+					n[pos] = ret
 					pos += 1
 				end
 			elseif ty == 15 then
@@ -227,7 +228,7 @@ module.Decode = function(input: buffer, asTable, key)
 				local ret = {}
 				for i = 1, min(#keys,#values) do
 					local v1,v2 = keys[i],values[i]
-					if v1 and v2 then
+					if v1 and v2~=nil then
 						ret[v1] = v2
 					end
 				end
@@ -248,13 +249,21 @@ module.Decode = function(input: buffer, asTable, key)
 					dpe()
 					return ret
 				else
-					if ty == 16 or ret ~= nil then cur[pos] = ret pos+=1 end
+					if ret ~= nil then
+						cur[pos] = ret
+					elseif ty == 16 then
+						ti(delayedNilWrites, {cur, pos})
+					end
+					pos+=1
 				end
 			end
 		end
 		dpe()
 	end
 	decodeRecursive(true)
+	for _,v in delayedNilWrites do
+		v[1][v[2]] = nil
+	end
 	dpe()
 	if asTable then
 		return returns
@@ -310,11 +319,21 @@ end
 
 local function IsDictionary(t: {})
 	local indexId = 1
+	local isTrue = false
+	local onlyNumeric = true
+	local expected = #t
 	for i, _ in t do
-		if typeof(i) ~= "number" or i ~= indexId or i % 1 ~= 0 then
-			return true
+		local notNumber = typeof(i) ~= "number"
+		if onlyNumeric and notNumber then
+			onlyNumeric = false
+		end
+		if notNumber or i ~= indexId or i % 1 ~= 0 then
+			isTrue = true
 		end
 		indexId += 1
+	end
+	if indexId == expected+1 or not onlyNumeric then
+		return isTrue
 	end
 	return false
 end
@@ -747,7 +766,8 @@ end
 local function Boolean5Compatible(v: {})
 	local len = #v
 	if len <= 1 or len > 5 then return false end
-	for _,a in v do
+	for i = 1, len do
+		local a = v[i]
 		if typeof(a) ~= "boolean" then return false end
 	end
 	return true
