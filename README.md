@@ -1,6 +1,5 @@
 # NetShrink
 A Roblox module that compresses various data types into a buffer for easy storage, compression and encryption.
-https://create.roblox.com/store/asset/128909547837894
 
 ## Credits
 DEFLATE/Zlib module not created by me, [see the original asset here](https://create.roblox.com/store/asset/5649237524)
