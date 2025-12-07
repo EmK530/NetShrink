@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.6
+NetShrink v1.5.7
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -817,8 +817,7 @@ VtoDT = {
 			return module.Table(unpack(stuff))		
 		end
 		-- Encode as dictionary
-		for i = 1, #v do
-			local v = v[i]
+		for i,v in v do
 			local t1,t2 = typeof(i),typeof(v)
 			local c1,c2 = VtoDT[t1],VtoDT[t2]
 			if not c1 then warn("[NetShrink] Unsupported variable type: "..t1) continue end
