@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.5
+NetShrink v1.5.6
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -213,23 +213,37 @@ module.Decode = function(input: buffer, asTable, key)
 				local keys = {}
 				local values = {}
 				local tgt = keys
+				local curPos = 1
+				local delayedWrite = {}
 				i += 1
 				local swap = false
 				while true do
 					local ty2 = dataTypes[i]
 					if ty2 == 14 then
 						i += 1
-						if swap then break else swap = true tgt = values end
+						if swap then break else swap = true tgt = values curPos = 1 end
 					else
 						local a = decodeRecursive(false)
-						ti(tgt,a)
+						if a == nil then
+							ti(delayedWrite,{tgt,curPos})
+						else
+							tgt[curPos] = a
+						end
+						curPos += 1
 					end
+				end
+				for _,v in delayedWrite do
+					v[1][v[2]] = nil
 				end
 				local ret = {}
 				for i = 1, min(#keys,#values) do
 					local v1,v2 = keys[i],values[i]
-					if v1 and v2~=nil then
-						ret[v1] = v2
+					if v1 then
+						if v2 == nil then
+							ti(delayedNilWrites,{ret,v1})
+						else
+							ret[v1] = v2
+						end
 					end
 				end
 				if not insert then
@@ -319,21 +333,11 @@ end
 
 local function IsDictionary(t: {})
 	local indexId = 1
-	local isTrue = false
-	local onlyNumeric = true
-	local expected = #t
 	for i, _ in t do
-		local notNumber = typeof(i) ~= "number"
-		if onlyNumeric and notNumber then
-			onlyNumeric = false
-		end
-		if notNumber or i ~= indexId or i % 1 ~= 0 then
-			isTrue = true
+		if typeof(i) ~= "number" or i ~= indexId or i % 1 ~= 0 then
+			return true
 		end
 		indexId += 1
-	end
-	if indexId == expected+1 or not onlyNumeric then
-		return isTrue
 	end
 	return false
 end
@@ -813,7 +817,8 @@ VtoDT = {
 			return module.Table(unpack(stuff))		
 		end
 		-- Encode as dictionary
-		for i,v in v do
+		for i = 1, #v do
+			local v = v[i]
 			local t1,t2 = typeof(i),typeof(v)
 			local c1,c2 = VtoDT[t1],VtoDT[t2]
 			if not c1 then warn("[NetShrink] Unsupported variable type: "..t1) continue end
@@ -906,5 +911,4 @@ module.Encode = function(...)
 end
 
 Decode.Init()
-
 return module
