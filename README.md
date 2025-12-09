@@ -82,6 +82,16 @@ Compresses every Color3 channel as a UInt8 instead of a floating point number, r
 Compresses CFrames with only XYZ coordinates and euler angles.<br>
 <b>Do not enable, compressed size is worse on v1.5.2, improvements coming soon.</b><br>
 **Default value: false**
+
+#### IncludeIndexHoles
+This setting influences detection between tables and dictionaries, if a table like `{true,nil,false}` is passed,<br>
+it notices an index jump from 1 to 3 but encodes the missing index as nil if the table is not detected as a dictionary.<br>
+**Default value: true**
+
+#### IndexJumpLimit
+This setting only matters if IncludeIndexHoles is true, this limits the max allowed index jump from nil values when checking<br>
+if a table is a dictionary for safety reasons. If you have way too many nil values separating non-nil values in a table try increasing this value to preserve them.<br>
+**Default value: 10**
 <hr>
 
 There are also settings available for how the entire buffer gets compressed, accessible in `NetShrink.Config`:
