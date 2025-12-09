@@ -135,7 +135,10 @@ Below is a list of all supported data types and their respective functions and d
 - [Dictionary](https://github.com/EmK530/NetShrink#dictionary)
 - [Nil](https://github.com/EmK530/NetShrink#nil)
 - [EnumItem](https://github.com/EmK530/NetShrink#EnumItem)
+- [UDim](https://github.com/EmK530/NetShrink#UDim)
 - [UDim2](https://github.com/EmK530/NetShrink#UDim2)
+- [NumberSequence](https://github.com/EmK530/NetShrink#NumberSequence)
+- [NumberRange](https://github.com/EmK530/NetShrink#NumberRange)
 <hr>
 
 ### String
@@ -267,10 +270,32 @@ Example: `NetShrink.Nil()`
 Stores an EnumItem as one 1-byte value and one 2-byte value.<br>
 Arguments: `input: EnumItem`<br/>
 Example: `Netshrink.EnumItem(Enum.EasingDirection.Out)`
+<hr>
+
+### UDim
+Stores a UDim with Scale and Offset as 8 bytes.<br>
+UDims are hardcoded as single-precision so double-precision is not available for this DataType.<br>
+Arguments: `input: UDim`<br>
+Example: `NetShrink.UDim(UDim.new(120, 346))`
+<hr>
 
 ### UDim2
 Stores a UDim2 with Scale and Offset as 16 bytes.<br>
 UDim2s are hardcoded as single-precision so double-precision is not available for this DataType.<br>
 Arguments: `input: UDim2`<br>
 Example: `NetShrink.UDim2(UDim2.new(120, 346, 81, 299))`
+<hr>
+
+### NumberSequence
+Stores a NumberSequence with an option to use single-precision to reduce size by half.<br>
+Size: 2+(keypoints * 4) bytes as single-precision, 2+(keypoints * 8) bytes as double-precision.
+Arguments: `input: NumberSequence, float: boolean`<br>
+Example: `NetShrink.NumberSequence(NumberSequence.new(0, 10), true)`
+<hr>
+
+### NumberRange
+Stores a NumberRange with an option to use single-precision to reduce size by half.<br>
+Size: 8 bytes as single-precision, 16 bytes as double-precision.
+Arguments: `input: NumberRange, float: boolean`<br>
+Example: `NetShrink.NumberRange(NumberRange.new(3, 5), true)`
 <hr>
