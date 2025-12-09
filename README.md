@@ -50,7 +50,7 @@ If `encoded` was encrypted, adding the key used during encoding as the third arg
 ## Optimizing performance
 Compression is an expensive part of NetShrink.<br>
 If you need to perform a lot of encode/decode operations for cases like Multiplayer, it is recommended to disable compression.<br>
-To do this, you mainly want to set `NetShrink.Config.CompressMode` to 0 to not pass the output through DEFLATE.<br>
+To do this, you mainly want to set `NetShrink.Config.CompressMode` to 0 to not pass the output through EncodingService.<br>
 This increases the output size, so check the section "<a href="https://github.com/EmK530/NetShrink#Optimizing-data-usage">Optimizing data usage</a>" to find ways to counter that.
 
 ## Optimizing data usage
