@@ -293,13 +293,68 @@ functions = {
 		buwu16(buf, 1, v.Data[2]) -- enum idx
 		return buf
 	end,
-
 	function(v) -- UDim2
 		local dat = v.Data
 		local buf = bucr(#dat*4)
 		for i,d in pairs(dat) do
 			buwf32(buf,(i-1)*4,d)
 		end
+		return buf
+	end,
+	function(v) -- UDim
+		local dat = v.Data
+		local buf = bucr(#dat*4)
+		for i,d in pairs(dat) do
+			buwf32(buf,(i-1)*4,d)
+		end
+		return buf
+	end,
+	function(v) -- NumberSequence
+		local func
+		local off
+		local dat = v.Data
+		local kp = v.Value.Keypoints
+		local count = #kp
+		if v.comp1 then
+			func = buwf32
+			off = 4
+		else
+			func = buwf64
+			off = 8
+		end
+		local varlen = module.EncodeVarLength(count)
+		local lensz = bule(varlen)
+		local buf = bucr((count*off*3)+lensz+1)
+		buco(buf,0,varlen,0,lensz)
+		buwu8(buf,lensz,(if v.comp1 then 1 else 0))
+		local pos = lensz+1
+		for _,k in kp do
+			func(buf,pos,k.Time)
+			pos += off
+		end
+		for _,k in kp do
+			func(buf,pos,k.Value)
+			pos += off
+			func(buf,pos,k.Envelope)
+			pos += off
+		end
+		return buf
+	end,
+	function(v) -- NumberRange
+		local func
+		local off
+		local data = v.Value
+		if v.comp1 then
+			func = buwf32
+			off = 4
+		else
+			func = buwf64
+			off = 8
+		end
+		local buf = bucr(off*2+1)
+		buwu8(buf,0,(if v.comp1 then 1 else 0))
+		func(buf,1,data.Min)
+		func(buf,off+1,data.Max)
 		return buf
 	end,
 }

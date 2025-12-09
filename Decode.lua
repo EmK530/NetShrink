@@ -22,6 +22,7 @@ local C3r = Color3.fromRGB
 local CFnew = CFrame.new
 local CFe = CFrame.fromEulerAnglesXYZ
 local UD2new = UDim2.new
+local UDnew = UDim.new
 
 local EncodingService = game:GetService("EncodingService")
 local Comp = require(script.Parent.Compression)
@@ -315,7 +316,6 @@ local functions = {
 		local Z = buru16(input, offset) offset += 2
 		return Vector3int16.new(X-32768,Y-32768,Z-32768),offset
 	end,
-
 	function(input: buffer, offset: number) -- EnumItem
 		local value = buru8(input, offset) 
 		offset += 1
@@ -325,7 +325,6 @@ local functions = {
 		
 		return (enumMap or enumMapFallback)[enumIdx]:FromValue(value), offset
 	end,
-
 	function(input: buffer, offset: number) -- UDim2
 		local Xscale = burf32(input, offset)
 		local Xoffset = burf32(input, offset + 4)
@@ -334,6 +333,40 @@ local functions = {
 
 		offset += 16
 		return UD2new(Xscale, Xoffset, Yscale, Yoffset), offset
+	end,
+	function(input: buffer, offset: number) -- UDim
+		local scale = burf32(input, offset)
+		local _offset = burf32(input, offset + 4)
+
+		offset += 8
+		return UDnew(scale, _offset), offset
+	end,
+	function(input: buffer, offset:number) -- NumberSequence
+		local count, off = module.DecodeVarLength(input, offset)
+		offset += off
+		local float = buru8(input, offset)==1 offset += 1
+		local times = {}
+		local keypoints = {}
+		local func,add
+		if float then func,add = burf32,4 else func,add = burf64,8 end
+		for i = 1, count do
+			ti(times, func(input, offset))
+			offset += add
+		end
+		for i = 1, count do
+			local value = func(input, offset) offset += add
+			local envelope = func(input, offset) offset += add
+			ti(keypoints, NumberSequenceKeypoint.new(times[i],value,envelope))
+		end
+		return NumberSequence.new(keypoints),offset
+	end,
+	function(input: buffer, offset:number) -- NumberRange
+		local float = buru8(input, offset)==1 offset += 1
+		local func,add
+		if float then func,add = burf32,4 else func,add = burf64,8 end
+		local min = func(input, offset) offset += add
+		local max = func(input, offset) offset += add
+		return NumberRange.new(min, max),offset
 	end,
 }
 

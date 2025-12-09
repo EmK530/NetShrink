@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.5.7
+NetShrink v1.6.0
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -78,7 +78,9 @@ module.Config = {
 		},
 		["Preferf32"] = false,
 		["Use3bColors"] = true,
-		["UseEulerCFrames"] = false
+		["UseEulerCFrames"] = false,
+		["IncludeIndexHoles"] = true,
+		["IndexJumpLimit"] = 10
 	},
 	["CompressMode"] = 3,
 	["CompressLevel"] = 1,
@@ -332,14 +334,21 @@ EncodeList = function(inp: {}, output, types)
 end
 
 local function IsDictionary(t: {})
+	local ijl = module.Config.AutoConversion.IndexJumpLimit
+	local shouldFill = module.Config.AutoConversion.IncludeIndexHoles
 	local indexId = 1
 	for i, _ in t do
-		if typeof(i) ~= "number" or i ~= indexId or i % 1 ~= 0 then
+		local notSequential = i ~= indexId
+		if typeof(i) ~= "number" or i % 1 ~= 0 then
 			return true
+		elseif notSequential then
+			if not shouldFill or i - indexId > ijl then -- This index jump is too large to be filled
+				return true
+			end
 		end
 		indexId += 1
 	end
-	return false
+	return #t ~= table.maxn(t)
 end
 
 -- Encodes NetShrink data types into a buffer and returns said buffer
@@ -758,13 +767,40 @@ end
 
 --[[
 Create a Netshrink data type for an UDim2
-Size: 16 bytes as float, 32 bytes as double.
+Size: 16 bytes.
 ]]
 module.UDim2 = function(input: UDim2)
 	return {
 		DataType = 21,
 		Data = {input.X.Scale, input.X.Offset, input.Y.Scale, input.Y.Offset}
 	}
+end
+
+--[[
+Create a Netshrink data type for a UDim
+Size: 8 bytes.
+]]
+module.UDim = function(input: UDim)
+	return {
+		DataType = 22,
+		Data = {input.Scale, input.Offset}
+	}
+end
+
+--[[
+Create a Netshrink data type for a NumberSequence
+Size: 2+(keypoints * 4) bytes as float, 2+(keypoints * 8) bytes as double.
+]]
+module.NumberSequence = function(input: UDim, float: boolean)
+	return { DataType = 23, comp1 = float, Value = input }
+end
+
+--[[
+Create a Netshrink data type for a NumberRange
+Size: 8 bytes as float, 16 bytes as double.
+]]
+module.NumberRange = function(input: UDim, float: boolean)
+	return { DataType = 24, comp1 = float, Value = input }
 end
 
 local function Boolean5Compatible(v: {})
@@ -795,7 +831,6 @@ VtoDT = {
 	end,
 	["table"] = function(v: {})
 		if Boolean5Compatible(v) then
-			print("Doing boolean5")
 			return module.Boolean5(unpack(v))
 		end
 		local stuff = {}
@@ -863,13 +898,20 @@ VtoDT = {
 	["Vector3int16"] = function(v: Vector3int16)
 		return module.Vector3int16(v)
 	end,
-
 	["EnumItem"] = function(v: EnumItem)
 		return module.EnumItem(v)
 	end,
-
 	["UDim2"] = function(v: UDim2)
 		return module.UDim2(v)
+	end,
+	["UDim"] = function(v: UDim)
+		return module.UDim(v)
+	end,
+	["NumberSequence"] = function(v: NumberSequence)
+		return module.NumberSequence(v, module.Config.AutoConversion.Preferf32)
+	end,
+	["NumberRange"] = function(v: NumberSequence)
+		return module.NumberRange(v, module.Config.AutoConversion.Preferf32)
 	end,
 }
 
