@@ -747,6 +747,7 @@ module.ColorSequence = function(input: ColorSequence, float: boolean, byte: bool
 end
 
 local enumMapReverse: {[Enum]: number} = {} -- enum -> number
+local enumCache = {} -- enum -> {name -> number}
 for i, v in Enum:GetEnums() do
 	enumMapReverse[v] = i
 end
@@ -756,9 +757,29 @@ Create a Netshrink data type for an EnumItem
 Size: 3 bytes
 ]]
 module.EnumItem = function(input: EnumItem)
+	if input.Name:sub(1, 5) == "World" then
+		return error("[NetShrink] Enum Keycodes World0-World95 are not supported")
+	end
+	
 	local enumIdx: number = enumMapReverse[input.EnumType] -- uint16
-	local value: number = input.Value -- byte
-
+	if not enumCache[enumIdx] then
+		enumCache[enumIdx] = input.EnumType:GetEnumItems()
+		
+		--> special case: KeyCode enum has >256 enums, but 95 of those are 100% broken now
+		--> ^^ https://devforum.roblox.com/t/what-are-the-inputs-world0-to-world95-used-for/222976/8
+		
+		local cache = enumCache[enumIdx]
+		if input.EnumType == Enum.KeyCode then
+			for i, en: EnumItem in Enum.KeyCode:GetEnumItems() do
+				if en.Name:sub(1, 5) ~= "World" then continue end
+				
+				table.remove(cache, table.find(cache, en))
+			end
+		end
+	end
+	
+	local value: number = table.find(enumCache[enumIdx], input)
+	
 	return { 
 		DataType = 20, 
 		Data = {value, enumIdx}
