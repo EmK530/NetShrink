@@ -288,9 +288,9 @@ functions = {
 		return buf
 	end,
 	function(v) -- EnumItem
-		local buf = bucr(3)
-		buwu8(buf, 0, v.Data[1]) -- value
-		buwu16(buf, 1, v.Data[2]) -- enum idx
+		local buf = bucr(4)
+		buwu16(buf, 0, v.Data[1]) -- value
+		buwu16(buf, 2, v.Data[2]) -- enum idx
 		return buf
 	end,
 	function(v) -- UDim2
