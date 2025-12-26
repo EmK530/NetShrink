@@ -317,8 +317,8 @@ local functions = {
 		return Vector3int16.new(X-32768,Y-32768,Z-32768),offset
 	end,
 	function(input: buffer, offset: number) -- EnumItem
-		local value = buru8(input, offset) 
-		offset += 1
+		local value = buru16(input, offset) 
+		offset += 2
 
 		local enumIdx = buru16(input, offset)
 		offset += 2

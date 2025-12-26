@@ -277,7 +277,7 @@ Example: `NetShrink.Nil()`
 <hr>
 
 ### EnumItem
-Stores an EnumItem as one 1-byte value and one 2-byte value.<br>
+Stores an EnumItem as one 2-byte value and one 2-byte value.<br>
 Arguments: `input: EnumItem`<br/>
 Example: `Netshrink.EnumItem(Enum.EasingDirection.Out)`
 <hr>
