@@ -24,6 +24,8 @@ local CFe = CFrame.fromEulerAnglesXYZ
 local UD2new = UDim2.new
 local UDnew = UDim.new
 
+local enumKeycode = Enum.KeyCode
+
 local EncodingService = game:GetService("EncodingService")
 local Comp = require(script.Parent.Compression)
 
@@ -35,7 +37,10 @@ local compressModeTargets = {
 
 --local enumMap: {[Enum]: number} = {} --> number -> enum
 local enumMap = nil
+local keycodeEnumMapIdx = nil
 local enumMapFallback = {}
+local enumCache = {} -- enum --> {name --> number}
+
 for i,v in Enum:GetEnums() do
 	enumMapFallback[i] = v
 end
@@ -49,8 +54,18 @@ module.TryLoadEnumMap = function()
 		for _, str in enumStrMap.Value:split("/") do
 			local contents = str:split("-")
 			local isValid = pcall(function() assert(Enum[contents[2]]) end)
-
-			enumMap[tonumber(contents[1])] = (isValid and Enum[contents[2]] or "SERVER_ONLY_ENUM")
+			
+			local i = tonumber(contents[1])
+			
+			if not isValid then
+				enumMap[i] = "SERVER_ONLY_ENUM"
+				continue
+			end
+			
+			if Enum[contents[2]] == enumKeycode then
+				keycodeEnumMapIdx = i
+			end
+			enumMap[i] = Enum[contents[2]]
 		end
 	else
 		return true
@@ -62,7 +77,11 @@ module.Init = function()
 		--> we also store a stringvalue for the client to use, because the client and server have different enums
 		local strMap: string = "" 
 		enumMap = {}
-		for i, v in Enum:GetEnums() do
+		for i, v: Enum in Enum:GetEnums() do
+			if v == enumKeycode then
+				keycodeEnumMapIdx = i
+			end
+			
 			strMap ..= `{i}-{v}/`
 			enumMap[i] = v
 		end
@@ -76,7 +95,7 @@ module.Init = function()
 		obj.Parent = script
 		return
 	end
-	
+
 	module.TryLoadEnumMap()
 end
 
@@ -103,7 +122,7 @@ local functions = {
 		offset+=amt
 		local mode = buru8(input, offset)
 		offset+=1
-		
+
 		local str
 		if mode > 0 then
 			if mode == 3 then
@@ -317,12 +336,34 @@ local functions = {
 		return Vector3int16.new(X-32768,Y-32768,Z-32768),offset
 	end,
 	function(input: buffer, offset: number) -- EnumItem
-		local value = buru8(input, offset) 
-		offset += 1
+		local enumIdx = buru16(input, offset + 1)
 
-		local enumIdx = buru16(input, offset)
-		offset += 2
+		local value = buru8(input, offset) 
+		offset += 3
 		
+		if not enumCache[enumIdx] then
+			local using = (enumMap or enumMapFallback)[enumIdx]
+			if using == "SERVER_ONLY_ENUM" then
+				return error("[NetShrink] Attempt to decode server-only Enum on client")
+			end
+			
+			enumCache[enumIdx] = using:GetEnumItems()
+
+			--> special case: KeyCode enum has >256 enums, but 95 of those are 100% broken now
+			--> ^^ https://devforum.roblox.com/t/what-are-the-inputs-world0-to-world95-used-for/222976/8
+
+			local cache = enumCache[enumIdx]
+			if enumIdx == enumKeycode then
+				for i, en: EnumItem in enumKeycode:GetEnumItems() do
+					if en.Name:sub(1, 5) ~= "World" then continue end
+					
+					table.remove(cache, table.find(cache, en)) -- die
+				end
+			end
+		end
+
+		value = enumCache[enumIdx][value].Value
+
 		return (enumMap or enumMapFallback)[enumIdx]:FromValue(value), offset
 	end,
 	function(input: buffer, offset: number) -- UDim2
