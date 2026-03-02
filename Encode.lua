@@ -357,6 +357,7 @@ functions = {
 		func(buf,off+1,data.Max)
 		return buf
 	end,
+	nil -- RESERVED: Dictionary end marker for v1.6.2 fix
 }
 
 module.Convert = function(v)

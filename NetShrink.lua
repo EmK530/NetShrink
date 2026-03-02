@@ -2,7 +2,7 @@ local module = {}
 
 --[[
 
-NetShrink v1.6.1
+NetShrink v1.6.2
 Compressing anything possible into binary data!
 
 Developed by EmK530
@@ -221,7 +221,7 @@ module.Decode = function(input: buffer, asTable, key)
 				local swap = false
 				while true do
 					local ty2 = dataTypes[i]
-					if ty2 == 14 then
+					if ty2 == 25 then
 						i += 1
 						if swap then break else swap = true tgt = values curPos = 1 end
 					else
@@ -248,7 +248,7 @@ module.Decode = function(input: buffer, asTable, key)
 						end
 					end
 				end
-				if not insert then
+				if not insert and startLayer >= layer then
 					dpe()
 					return ret
 				else
@@ -302,7 +302,7 @@ local function RecursiveEncode(inp: {}, output, types, dictionary)
 			ti(l1, i)
 		end
 		totals += EncodeList(l1, output, types)
-		ti(types, 14)
+		ti(types, dictionary and 25 or 14)
 		totals += 1
 	end
 	totals += EncodeList(inp, output, types)
@@ -320,7 +320,7 @@ EncodeList = function(inp: {}, output, types)
 		if v.DataType == 13 or v.DataType == 15 then
 			ti(types, v.DataType)
 			local a = RecursiveEncode(v.Value,output,types,v.DataType==15)
-			ti(types, 14)
+			ti(types, v.DataType == 15 and 25 or 14)
 			totals += a + 2
 		else
 			ti(types, v.DataType)
@@ -760,26 +760,26 @@ module.EnumItem = function(input: EnumItem)
 	if input.Name:sub(1, 5) == "World" then
 		return error("[NetShrink] Enum Keycodes World0-World95 are not supported")
 	end
-	
+
 	local enumIdx: number = enumMapReverse[input.EnumType] -- uint16
 	if not enumCache[enumIdx] then
 		enumCache[enumIdx] = input.EnumType:GetEnumItems()
-		
+
 		--> special case: KeyCode enum has >256 enums, but 95 of those are 100% broken now
 		--> ^^ https://devforum.roblox.com/t/what-are-the-inputs-world0-to-world95-used-for/222976/8
-		
+
 		local cache = enumCache[enumIdx]
 		if input.EnumType == Enum.KeyCode then
 			for i, en: EnumItem in Enum.KeyCode:GetEnumItems() do
 				if en.Name:sub(1, 5) ~= "World" then continue end
-				
+
 				table.remove(cache, table.find(cache, en))
 			end
 		end
 	end
-	
+
 	local value: number = table.find(enumCache[enumIdx], input)
-	
+
 	return { 
 		DataType = 20, 
 		Data = {value, enumIdx}
@@ -974,4 +974,3 @@ end
 
 Decode.Init()
 return module
-

@@ -54,14 +54,14 @@ module.TryLoadEnumMap = function()
 		for _, str in enumStrMap.Value:split("/") do
 			local contents = str:split("-")
 			local isValid = pcall(function() assert(Enum[contents[2]]) end)
-			
+
 			local i = tonumber(contents[1])
-			
+
 			if not isValid then
 				enumMap[i] = "SERVER_ONLY_ENUM"
 				continue
 			end
-			
+
 			if Enum[contents[2]] == enumKeycode then
 				keycodeEnumMapIdx = i
 			end
@@ -81,7 +81,7 @@ module.Init = function()
 			if v == enumKeycode then
 				keycodeEnumMapIdx = i
 			end
-			
+
 			strMap ..= `{i}-{v}/`
 			enumMap[i] = v
 		end
@@ -340,13 +340,13 @@ local functions = {
 
 		local value = buru8(input, offset) 
 		offset += 3
-		
+
 		if not enumCache[enumIdx] then
 			local using = (enumMap or enumMapFallback)[enumIdx]
 			if using == "SERVER_ONLY_ENUM" then
 				return error("[NetShrink] Attempt to decode server-only Enum on client")
 			end
-			
+
 			enumCache[enumIdx] = using:GetEnumItems()
 
 			--> special case: KeyCode enum has >256 enums, but 95 of those are 100% broken now
@@ -356,7 +356,7 @@ local functions = {
 			if enumIdx == enumKeycode then
 				for i, en: EnumItem in enumKeycode:GetEnumItems() do
 					if en.Name:sub(1, 5) ~= "World" then continue end
-					
+
 					table.remove(cache, table.find(cache, en)) -- die
 				end
 			end
@@ -409,6 +409,7 @@ local functions = {
 		local max = func(input, offset) offset += add
 		return NumberRange.new(min, max),offset
 	end,
+	nil -- RESERVED: Dictionary end marker for v1.6.2 fix
 }
 
 module.ReadType = function(input: buffer, offset: number, type: number)
